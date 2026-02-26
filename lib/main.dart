@@ -166,6 +166,7 @@ class _MyAppState extends State<MyApp> {
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       initialRoute: widget.appConfig.isSetupComplete ? '/home' : '/setup',

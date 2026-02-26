@@ -66,7 +66,12 @@ class AppConfig {
   /// Get expiration date
   DateTime? get expirationDate {
     final dateStr = _prefs.getString(_keyExpirationDate);
-    return dateStr != null ? DateTime.parse(dateStr) : null;
+    if (dateStr == null) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Get language code (defaults to 'en')
@@ -95,7 +100,7 @@ class AppConfig {
     await _prefs.setString(_keyImageUrl, imageUrl);
     await _prefs.setString(
       _keyExpirationDate,
-      expirationDate.toIso8601String(),
+      '${expirationDate.year.toString().padLeft(4, '0')}-${expirationDate.month.toString().padLeft(2, '0')}-${expirationDate.day.toString().padLeft(2, '0')}',
     );
     await _prefs.setString(_keyTimezone, timezone);
     await _prefs.setBool(_keySetupComplete, true);
