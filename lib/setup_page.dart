@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'app_config.dart';
+import 'event_service.dart';
 import 'qr_scanner_page.dart';
 import 'l10n/app_localizations.dart';
 import 'main.dart';
@@ -190,11 +191,40 @@ class _SetupPageState extends State<SetupPage> {
     });
 
     try {
+      // Fetch event data from GraphQL API to get images
+      String? imageData;
+      String? imageMimeType;
+
+      final eventName = _eventController.text.trim();
+      final apiUrl = _apiUrlController.text.trim();
+
+      print('🔍 Fetching event data from GraphQL API...');
+      final eventInfo = await EventService.queryEventByName(
+        apiUrl: apiUrl,
+        eventName: eventName,
+      );
+
+      if (eventInfo != null) {
+        imageData = eventInfo['image_data'] as String?;
+        imageMimeType = eventInfo['image_mime_type'] as String?;
+
+        if (imageData != null && imageMimeType != null) {
+          print('✅ Event images fetched from API');
+        } else {
+          print('ℹ️ No images configured for this event');
+        }
+      } else {
+        print(
+          '⚠️ Could not fetch event data from API, continuing without images',
+        );
+      }
+
       await widget.appConfig.saveConfig(
         teamName: _teamNameController.text.trim(),
-        event: _eventController.text.trim(),
-        apiUrl: _apiUrlController.text.trim(),
-        imageUrl: _imageUrlController.text.trim(),
+        event: eventName,
+        apiUrl: apiUrl,
+        imageData: imageData,
+        imageMimeType: imageMimeType,
         expirationDate: _selectedExpirationDate!,
         timezone: _selectedTimezone!,
       );
@@ -218,6 +248,7 @@ class _SetupPageState extends State<SetupPage> {
         }
       }
     } catch (e) {
+      print('❌ Error saving configuration: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

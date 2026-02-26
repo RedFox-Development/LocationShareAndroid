@@ -1,8 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shimmer/shimmer.dart';
 import 'app_config.dart';
 import 'setup_page.dart';
 import 'settings_page.dart';
@@ -354,8 +354,8 @@ class _HomePageState extends State<HomePage> {
         // Lower half - event name and image display
         Expanded(
           child:
-              widget.appConfig.imageUrl != null &&
-                  widget.appConfig.imageUrl!.isNotEmpty
+              widget.appConfig.imageData != null &&
+                  widget.appConfig.imageMimeType != null
               ? Column(
                   children: [
                     // Event name
@@ -370,58 +370,72 @@ class _HomePageState extends State<HomePage> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    // Image
+                    // Image from base64 data
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-                        child: Image.network(
-                          widget.appConfig.imageUrl!,
-                          fit: BoxFit.contain,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            final isDark =
-                                Theme.of(context).brightness == Brightness.dark;
-                            return Shimmer.fromColors(
-                              baseColor: isDark
-                                  ? Colors.grey[700]!
-                                  : Colors.grey[300]!,
-                              highlightColor: isDark
-                                  ? Colors.grey[500]!
-                                  : Colors.grey[100]!,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.grey[800]
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.broken_image,
-                                    size: 64,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    loc.failedToLoadImage,
-                                    style: TextStyle(
+                        child: Builder(
+                          builder: (context) {
+                            try {
+                              final imageBytes = base64Decode(
+                                widget.appConfig.imageData!,
+                              );
+                              return Image.memory(
+                                imageBytes,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.broken_image,
+                                          size: 64,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.outline,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          loc.failedToLoadImage,
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            } catch (e) {
+                              print('❌ Error decoding image: $e');
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.broken_image,
+                                      size: 64,
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.outline,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            );
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      loc.failedToLoadImage,
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           },
                         ),
                       ),

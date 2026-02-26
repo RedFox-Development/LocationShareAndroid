@@ -5,7 +5,10 @@ class AppConfig {
   static const String _keyTeamName = 'team_name';
   static const String _keyEvent = 'event';
   static const String _keyApiUrl = 'api_url';
-  static const String _keyImageUrl = 'image_url';
+  static const String _keyImageUrl =
+      'image_url'; // Deprecated, kept for backward compatibility
+  static const String _keyImageData = 'image_data';
+  static const String _keyImageMimeType = 'image_mime_type';
   static const String _keySetupComplete = 'setup_complete';
   static const String _keyExpirationDate = 'expiration_date';
   static const String _keyLanguageCode = 'language_code';
@@ -60,8 +63,14 @@ class AppConfig {
   String get apiUrl =>
       _prefs.getString(_keyApiUrl) ?? 'https://your-project.vercel.app/api';
 
-  /// Get image URL
+  /// Get image URL (deprecated, for backward compatibility)
   String? get imageUrl => _prefs.getString(_keyImageUrl);
+
+  /// Get image data (base64 encoded)
+  String? get imageData => _prefs.getString(_keyImageData);
+
+  /// Get image MIME type
+  String? get imageMimeType => _prefs.getString(_keyImageMimeType);
 
   /// Get expiration date
   DateTime? get expirationDate {
@@ -90,14 +99,25 @@ class AppConfig {
     required String teamName,
     required String event,
     required String apiUrl,
-    required String imageUrl,
+    String? imageData,
+    String? imageMimeType,
     required DateTime expirationDate,
     required String timezone,
   }) async {
     await _prefs.setString(_keyTeamName, teamName);
     await _prefs.setString(_keyEvent, event);
     await _prefs.setString(_keyApiUrl, apiUrl);
-    await _prefs.setString(_keyImageUrl, imageUrl);
+
+    // Save image data if provided
+    if (imageData != null && imageMimeType != null) {
+      await _prefs.setString(_keyImageData, imageData);
+      await _prefs.setString(_keyImageMimeType, imageMimeType);
+    } else {
+      // Clear image data if not provided
+      await _prefs.remove(_keyImageData);
+      await _prefs.remove(_keyImageMimeType);
+    }
+
     await _prefs.setString(
       _keyExpirationDate,
       '${expirationDate.year.toString().padLeft(4, '0')}-${expirationDate.month.toString().padLeft(2, '0')}-${expirationDate.day.toString().padLeft(2, '0')}',
@@ -111,7 +131,9 @@ class AppConfig {
     await _prefs.remove(_keyTeamName);
     await _prefs.remove(_keyEvent);
     await _prefs.remove(_keyApiUrl);
-    await _prefs.remove(_keyImageUrl);
+    await _prefs.remove(_keyImageUrl); // Legacy
+    await _prefs.remove(_keyImageData);
+    await _prefs.remove(_keyImageMimeType);
     await _prefs.remove(_keyExpirationDate);
     await _prefs.remove(_keyTimezone);
     await _prefs.remove(_keySetupComplete);
