@@ -208,6 +208,12 @@ class _SetupPageState extends State<SetupPage> {
         imageData = eventInfo['image_data'] as String?;
         imageMimeType = eventInfo['image_mime_type'] as String?;
 
+        print('📦 Event info received:');
+        print(
+          '   Image data: ${imageData != null ? "${imageData!.substring(0, 50)}..." : "null"}',
+        );
+        print('   Image MIME: $imageMimeType');
+
         if (imageData != null && imageMimeType != null) {
           print('✅ Event images fetched from API');
         } else {
@@ -219,6 +225,10 @@ class _SetupPageState extends State<SetupPage> {
         );
       }
 
+      print(
+        '💾 Saving configuration with imageData: ${imageData != null ? "YES (${imageData!.length} chars)" : "NO"}',
+      );
+
       await widget.appConfig.saveConfig(
         teamName: _teamNameController.text.trim(),
         event: eventName,
@@ -228,6 +238,8 @@ class _SetupPageState extends State<SetupPage> {
         expirationDate: _selectedExpirationDate!,
         timezone: _selectedTimezone!,
       );
+
+      print('✅ Configuration saved to SharedPreferences');
 
       if (mounted) {
         // Show success message

@@ -36,21 +36,37 @@ class EventService {
         variables: {'eventName': eventName},
       );
 
+      print('📡 Sending GraphQL query to: $apiUrl');
+      print('📝 Query variables: eventName = "$eventName"');
+
       final QueryResult result = await client.query(options);
+
+      print('📥 GraphQL result received');
+      print('   Has exception: ${result.hasException}');
+      print('   Data: ${result.data}');
 
       if (result.hasException) {
         print('❌ GraphQL error querying event: ${result.exception}');
+        print('   Exception details: ${result.exception.toString()}');
         return null;
       }
 
       // Extract event data from response
       final eventData = result.data?['eventByName'] as Map<String, dynamic>?;
+
+      print('🔍 Extracted eventData: $eventData');
+
       if (eventData == null) {
         print('❌ No event found with name: $eventName');
+        print('   Full response data: ${result.data}');
         return null;
       }
 
       print('✅ Event data fetched successfully via GraphQL API');
+      print(
+        '   Image data length: ${(eventData['image_data'] as String?)?.length ?? 0}',
+      );
+      print('   Image MIME type: ${eventData['image_mime_type']}');
       return eventData;
     } catch (e) {
       print('❌ Error querying event data: $e');

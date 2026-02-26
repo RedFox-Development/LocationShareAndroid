@@ -228,6 +228,21 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _initForegroundTask();
     _requestPermissions();
+
+    // Debug: Log image data status
+    print('🏠 HomePage initialized');
+    print('   Team: ${widget.appConfig.teamName}');
+    print('   Event: ${widget.appConfig.event}');
+    print('   Has imageData: ${widget.appConfig.imageData != null}');
+    print('   Has imageMimeType: ${widget.appConfig.imageMimeType != null}');
+    if (widget.appConfig.imageData != null) {
+      print(
+        '   ImageData length: ${widget.appConfig.imageData!.length} characters',
+      );
+      print(
+        '   ImageData preview: ${widget.appConfig.imageData!.substring(0, 50)}...',
+      );
+    }
   }
 
   int _navigationIndex = 0;
