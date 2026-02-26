@@ -16,27 +16,49 @@ class LocationService {
     try {
       // Initialize timezone data if not already done
       if (!_timezoneInitialized) {
-        tz.initializeTimeZones();
-        _timezoneInitialized = true;
+        try {
+          tz.initializeTimeZones();
+          _timezoneInitialized = true;
+        } catch (e) {
+          print('⚠️ Timezone initialization warning: $e');
+          _timezoneInitialized =
+              true; // Mark as initialized anyway to avoid repeated attempts
+        }
       }
 
       final prefs = await SharedPreferences.getInstance();
       final apiUrl = prefs.getString('api_url');
       final teamName = prefs.getString('team_name');
       final event = prefs.getString('event');
-      final timezone = prefs.getString('timezone') ?? 'UTC';
+      final timezoneStr = prefs.getString('timezone') ?? 'UTC';
 
       if (apiUrl == null || teamName == null || event == null) {
         print('❌ Missing configuration for location upload');
+        print('   API URL: $apiUrl');
+        print('   Team Name: $teamName');
+        print('   Event: $event');
         return false;
       }
 
       // Convert timestamp to configured timezone
-      final location = tz.getLocation(timezone);
-      final tzTime = tz.TZDateTime.from(timestamp, location);
+      DateTime tzTime;
+      try {
+        final location = tz.getLocation(timezoneStr);
+        tzTime = tz.TZDateTime.from(timestamp, location);
+      } catch (e) {
+        print('⚠️ Timezone "$timezoneStr" not found, using UTC: $e');
+        tzTime = timestamp.toUtc();
+      }
 
       // Convert to ISO 8601 string for GraphQL
       final timestampStr = tzTime.toUtc().toIso8601String();
+
+      print('📤 Uploading location:');
+      print('   Team: $teamName');
+      print('   Event: $event');
+      print('   Lat: $latitude, Lon: $longitude');
+      print('   Timestamp: $timestampStr');
+      print('   API URL: $apiUrl');
 
       // Create GraphQL client
       final httpLink = HttpLink(apiUrl);
@@ -70,13 +92,33 @@ class LocationService {
 
       if (result.hasException) {
         print('❌ GraphQL error: ${result.exception}');
+        print('   Exception: ${result.exception.toString()}');
+        if (result.exception is OperationException) {
+          final opException = result.exception as OperationException;
+          print('   GraphQL Errors: ${opException.graphqlErrors}');
+          print('   Link Exception: ${opException.linkException}');
+        }
         return false;
       }
 
-      print('✅ Location uploaded successfully via GraphQL API');
-      return true;
+      if (result.data == null) {
+        print('❌ No data returned from mutation');
+        return false;
+      }
+
+      final data = result.data?['createLocationUpdate'];
+      if (data != null) {
+        print('✅ Location uploaded successfully via GraphQL API');
+        print('   ID: ${data['id']}');
+        print('   Timestamp: ${data['timestamp']}');
+        return true;
+      } else {
+        print('❌ Mutation returned null data');
+        return false;
+      }
     } catch (e) {
       print('❌ Error uploading location: $e');
+      print('   Stack trace: ${StackTrace.current}');
       return false;
     }
   }
