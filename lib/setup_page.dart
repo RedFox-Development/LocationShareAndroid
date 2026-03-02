@@ -22,7 +22,6 @@ class _SetupPageState extends State<SetupPage> {
   final _apiUrlController = TextEditingController(
     text: 'https://your-project.vercel.app/api',
   );
-  final _imageUrlController = TextEditingController();
   DateTime? _selectedExpirationDate;
   String? _selectedTimezone;
   bool _isSaving = false;
@@ -53,7 +52,6 @@ class _SetupPageState extends State<SetupPage> {
     _teamNameController.dispose();
     _eventController.dispose();
     _apiUrlController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -121,13 +119,29 @@ class _SetupPageState extends State<SetupPage> {
         if (data['apiUrl'] != null) {
           _apiUrlController.text = data['apiUrl'];
         }
-        if (data['imageUrl'] != null) {
-          _imageUrlController.text = data['imageUrl'];
-        }
         if (data['expirationDate'] != null) {
           try {
-            _selectedExpirationDate = DateTime.parse(data['expirationDate']);
+            // Parse Unix timestamp in milliseconds
+            final timestamp = data['expirationDate'];
+            print('📅 Parsing expiration timestamp: $timestamp');
+            if (timestamp is int) {
+              _selectedExpirationDate = DateTime.fromMillisecondsSinceEpoch(
+                timestamp,
+              );
+            } else if (timestamp is String) {
+              _selectedExpirationDate = DateTime.fromMillisecondsSinceEpoch(
+                int.parse(timestamp),
+              );
+            } else {
+              print('⚠️ Unexpected timestamp type: ${timestamp.runtimeType}');
+            }
+            print(
+              '✅ Successfully parsed expiration date: $_selectedExpirationDate',
+            );
           } catch (e) {
+            print(
+              '❌ Failed to parse expiration date: ${data['expirationDate']} - Error: $e',
+            );
             // Invalid date format, ignore
           }
         }
@@ -526,30 +540,6 @@ class _SetupPageState extends State<SetupPage> {
               },
               keyboardType: TextInputType.url,
               textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _imageUrlController,
-              decoration: InputDecoration(
-                labelText: loc.imageUrl,
-                hintText: loc.imageUrlHint,
-                prefixIcon: const Icon(Icons.image),
-                border: const OutlineInputBorder(),
-              ),
-              validator: (value) {
-                // Image URL is optional, but if provided, must be valid
-                if (value != null && value.trim().isNotEmpty) {
-                  final uri = Uri.tryParse(value.trim());
-                  if (uri == null ||
-                      !uri.hasScheme ||
-                      (!uri.scheme.startsWith('http'))) {
-                    return loc.enterValidUrl;
-                  }
-                }
-                return null;
-              },
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.done,
             ),
             const SizedBox(height: 20),
             InkWell(
