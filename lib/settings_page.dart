@@ -74,59 +74,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Widget _buildUrlItem({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required String? value,
-  }) {
-    final loc = AppLocalizations.of(context);
-    return Expanded(
-      child: InkWell(
-        onTap: value != null && value.isNotEmpty
-            ? () {
-                Clipboard.setData(ClipboardData(text: value));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      loc.urlCopied,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: Color.fromRGBO(7, 84, 16, 0.7),
-                  ),
-                );
-              }
-            : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, color: Color.fromRGBO(37, 55, 100, 1.0), size: 20),
-                  const SizedBox(width: 8),
-                  Builder(
-                    builder: (context) => Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoItem({
     required IconData icon,
     required String label,
@@ -191,28 +138,69 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildUrlsCard(BuildContext context) {
-    final loc = AppLocalizations.of(context);
+    final apiUrl = widget.appConfig.apiUrl;
+    final isApiUrlSet =
+        apiUrl.isNotEmpty && apiUrl != 'https://your-project.vercel.app/api';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildUrlItem(
-              context: context,
-              icon: Icons.cloud,
-              label: 'API URL',
-              value: widget.appConfig.apiUrl,
+      child: InkWell(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: apiUrl));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context).urlCopied,
+                style: const TextStyle(color: Colors.white),
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Color.fromRGBO(7, 84, 16, 0.7),
             ),
-            const SizedBox(width: 24),
-            _buildUrlItem(
-              context: context,
-              icon: Icons.image,
-              label: loc.imageUrl,
-              value: widget.appConfig.imageUrl,
-            ),
-          ],
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Icon(
+                Icons.cloud,
+                color: Color.fromRGBO(37, 55, 100, 1.0),
+                size: 24,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'API URL',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      apiUrl,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isApiUrlSet) const SizedBox(width: 8),
+              if (isApiUrlSet)
+                Icon(
+                  Icons.check_circle,
+                  color: Color.fromRGBO(7, 84, 16, 1.0),
+                  size: 28,
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -26,6 +26,7 @@ class _SetupPageState extends State<SetupPage> {
   String? _selectedTimezone;
   bool _isSaving = false;
   bool _showManualEntry = false;
+  bool _isConfigLocked = false; // Lock all fields when loaded from QR code
 
   // Common timezones list
   final List<String> _commonTimezones = [
@@ -148,6 +149,8 @@ class _SetupPageState extends State<SetupPage> {
         if (data['timezone'] != null) {
           _selectedTimezone = data['timezone'];
         }
+        // Lock all configuration when loaded from QR code
+        _isConfigLocked = true;
         // Switch to manual entry view to show populated fields
         _showManualEntry = true;
       });
@@ -482,6 +485,39 @@ class _SetupPageState extends State<SetupPage> {
                 const SizedBox(width: 48), // Balance the back button
               ],
             ),
+            if (_isConfigLocked)
+              Container(
+                margin: const EdgeInsets.only(top: 16, bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(7, 84, 16, 0.1),
+                  border: Border.all(
+                    color: Color.fromRGBO(7, 84, 16, 0.3),
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lock,
+                      color: Color.fromRGBO(7, 84, 16, 1.0),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Configuration locked from QR code. All fields are set by the organizer.',
+                        style: TextStyle(
+                          color: Color.fromRGBO(7, 84, 16, 1.0),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 24),
             TextFormField(
               controller: _teamNameController,
@@ -491,6 +527,8 @@ class _SetupPageState extends State<SetupPage> {
                 prefixIcon: const Icon(Icons.group),
                 border: const OutlineInputBorder(),
               ),
+              enabled: !_isConfigLocked,
+              readOnly: _isConfigLocked,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return loc.fieldRequired(loc.teamName);
@@ -508,6 +546,8 @@ class _SetupPageState extends State<SetupPage> {
                 prefixIcon: const Icon(Icons.event),
                 border: const OutlineInputBorder(),
               ),
+              enabled: !_isConfigLocked,
+              readOnly: _isConfigLocked,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return loc.fieldRequired(loc.event);
@@ -519,13 +559,15 @@ class _SetupPageState extends State<SetupPage> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _apiUrlController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'API URL',
                 hintText: 'https://your-project.vercel.app/api',
-                prefixIcon: Icon(Icons.cloud),
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.cloud),
+                border: const OutlineInputBorder(),
                 helperText: 'GraphQL API endpoint',
               ),
+              enabled: !_isConfigLocked,
+              readOnly: _isConfigLocked,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'API URL is required';
@@ -543,13 +585,14 @@ class _SetupPageState extends State<SetupPage> {
             ),
             const SizedBox(height: 20),
             InkWell(
-              onTap: _selectExpirationDate,
+              onTap: _isConfigLocked ? null : _selectExpirationDate,
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: loc.expirationDate,
                   hintText: loc.expirationDateHint,
                   prefixIcon: const Icon(Icons.calendar_today),
                   border: const OutlineInputBorder(),
+                  enabled: !_isConfigLocked,
                 ),
                 child: Builder(
                   builder: (context) => Text(
@@ -558,6 +601,8 @@ class _SetupPageState extends State<SetupPage> {
                       fontSize: 16,
                       color: _selectedExpirationDate == null
                           ? Theme.of(context).colorScheme.outline
+                          : _isConfigLocked
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
                           : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
@@ -569,10 +614,17 @@ class _SetupPageState extends State<SetupPage> {
                 padding: const EdgeInsets.only(top: 8.0, left: 12.0),
                 child: Builder(
                   builder: (context) => Text(
-                    loc.configWillReset,
+                    _isConfigLocked
+                        ? '${loc.configWillReset} (Set by organizer)'
+                        : loc.configWillReset,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.outline,
+                      color: _isConfigLocked
+                          ? Color.fromRGBO(7, 84, 16, 1.0)
+                          : Theme.of(context).colorScheme.outline,
+                      fontWeight: _isConfigLocked
+                          ? FontWeight.w500
+                          : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -592,11 +644,13 @@ class _SetupPageState extends State<SetupPage> {
                   child: Text(timezone),
                 );
               }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedTimezone = newValue;
-                });
-              },
+              onChanged: _isConfigLocked
+                  ? null
+                  : (String? newValue) {
+                      setState(() {
+                        _selectedTimezone = newValue;
+                      });
+                    },
               validator: (value) {
                 if (value == null) {
                   return loc.timezoneRequired;

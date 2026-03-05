@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -225,11 +226,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  Uint8List? _eventImageBytes;
+  String? _cachedImageData;
+  String? _cachedImageMimeType;
+
   @override
   void initState() {
     super.initState();
     _initForegroundTask();
     _requestPermissions();
+    _refreshEventImageCache();
 
     // Debug: Log image data status
     print('🏠 HomePage initialized');
@@ -244,6 +250,41 @@ class _HomePageState extends State<HomePage> {
       print(
         '   ImageData preview: ${widget.appConfig.imageData!.substring(0, 50)}...',
       );
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _refreshEventImageCache();
+  }
+
+  void _refreshEventImageCache() {
+    final imageData = widget.appConfig.imageData;
+    final imageMimeType = widget.appConfig.imageMimeType;
+
+    if (imageData == null || imageMimeType == null) {
+      _eventImageBytes = null;
+      _cachedImageData = null;
+      _cachedImageMimeType = null;
+      return;
+    }
+
+    if (_cachedImageData == imageData &&
+        _cachedImageMimeType == imageMimeType) {
+      return;
+    }
+
+    try {
+      _eventImageBytes = base64Decode(imageData);
+      _cachedImageData = imageData;
+      _cachedImageMimeType = imageMimeType;
+      print('🖼️ Cached event image bytes (${_eventImageBytes!.length} bytes)');
+    } catch (e) {
+      _eventImageBytes = null;
+      _cachedImageData = imageData;
+      _cachedImageMimeType = imageMimeType;
+      print('❌ Error decoding cached image: $e');
     }
   }
 
@@ -393,42 +434,7 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
                         child: Builder(
                           builder: (context) {
-                            try {
-                              final imageBytes = base64Decode(
-                                widget.appConfig.imageData!,
-                              );
-                              return Image.memory(
-                                imageBytes,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.broken_image,
-                                          size: 64,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.outline,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          loc.failedToLoadImage,
-                                          style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.outline,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                            } catch (e) {
-                              print('❌ Error decoding image: $e');
+                            if (_eventImageBytes == null) {
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -453,6 +459,40 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               );
                             }
+
+                            return Image.memory(
+                              _eventImageBytes!,
+                              key: ValueKey(
+                                '${_cachedImageMimeType ?? ''}-${_eventImageBytes!.length}',
+                              ),
+                              fit: BoxFit.contain,
+                              gaplessPlayback: true,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.broken_image,
+                                        size: 64,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        loc.failedToLoadImage,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.outline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
                           },
                         ),
                       ),
