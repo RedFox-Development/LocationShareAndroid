@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,8 +12,9 @@ import 'l10n/app_localizations.dart';
 import 'location_service.dart';
 import 'splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const AppLoader());
 }
 
@@ -37,7 +39,7 @@ class _AppLoaderState extends State<AppLoader> {
     final appConfig = await AppConfig.init();
 
     // Keep splash screen visible for at least 3 seconds for shimmer effect
-    await Future.delayed(const Duration(milliseconds: 3000));
+    await Future.delayed(const Duration(milliseconds: 4500));
 
     if (mounted) {
       setState(() {
