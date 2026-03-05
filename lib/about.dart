@@ -97,7 +97,7 @@ class _AboutPageState extends State<AboutPage> {
                     : const Color.fromRGBO(100, 200, 100, 1.0),
                 period: const Duration(milliseconds: 1500),
                 child: Image.asset(
-                  'assets/dev/redfox_dev_app.png',
+                  'assets/redfox_dev_app.png',
                   width: 120,
                   height: 120,
                 ),

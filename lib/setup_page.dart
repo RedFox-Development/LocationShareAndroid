@@ -375,7 +375,7 @@ class _SetupPageState extends State<SetupPage> {
                   Positioned(
                     right: 5,
                     child: Image.asset(
-                      'assets/dev/redfox_dev_app.png',
+                      'assets/redfox_dev_app.png',
                       width: 100,
                       height: 100,
                       fit: BoxFit.contain,
@@ -387,7 +387,7 @@ class _SetupPageState extends State<SetupPage> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.asset(
-                        'assets/dev/icon.png',
+                        'assets/icon.png',
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
