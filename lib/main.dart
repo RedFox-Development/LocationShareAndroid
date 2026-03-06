@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -225,10 +226,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   Uint8List? _eventImageBytes;
   String? _cachedImageData;
   String? _cachedImageMimeType;
+  bool _hasRecentLocation = false;
+  Timer? _locationCheckTimer;
+  late AnimationController _flashController;
 
   @override
   void initState() {
@@ -236,6 +241,12 @@ class _HomePageState extends State<HomePage> {
     _initForegroundTask();
     _requestPermissions();
     _refreshEventImageCache();
+
+    // Initialize flash animation controller
+    _flashController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
 
     // Debug: Log image data status
     print('🏠 HomePage initialized');
@@ -291,6 +302,44 @@ class _HomePageState extends State<HomePage> {
   int _navigationIndex = 0;
   bool _sharingState = false;
 
+  @override
+  void dispose() {
+    _locationCheckTimer?.cancel();
+    _flashController.dispose();
+    super.dispose();
+  }
+
+  void _startLocationCheck() {
+    _hasRecentLocation = false;
+    _locationCheckTimer?.cancel();
+    _locationCheckTimer = Timer.periodic(const Duration(seconds: 2), (
+      timer,
+    ) async {
+      try {
+        final position = await Geolocator.getLastKnownPosition();
+        if (position != null) {
+          final age = DateTime.now().difference(position.timestamp);
+          if (mounted) {
+            setState(() {
+              _hasRecentLocation = age.inSeconds < 30;
+            });
+          }
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    });
+  }
+
+  void _stopLocationCheck() {
+    _locationCheckTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _hasRecentLocation = false;
+      });
+    }
+  }
+
   void _initForegroundTask() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
@@ -342,6 +391,7 @@ class _HomePageState extends State<HomePage> {
       notificationText: 'Waiting for location...',
       callback: startCallback,
     );
+    _startLocationCheck();
   }
 
   Future<void> _stopService() async {
@@ -349,6 +399,7 @@ class _HomePageState extends State<HomePage> {
       _sharingState = false;
     });
     await FlutterForegroundTask.stopService();
+    _stopLocationCheck();
   }
 
   void _onNavigationItemTapped(int index) {
@@ -363,50 +414,78 @@ class _HomePageState extends State<HomePage> {
     final loc = AppLocalizations.of(context);
     return Column(
       children: [
-        // Upper half - centered button
+        // Upper half - button with status icon
         Expanded(
           child: Center(
-            child: _sharingState
-                ? ElevatedButton.icon(
-                    icon: const Icon(Icons.location_off_outlined, size: 30),
-                    style: const ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll<Color>(
-                        Color.fromRGBO(7, 84, 16, 0.8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Reserve space on left to keep button centered
+                const SizedBox(width: 40),
+                _sharingState
+                    ? ElevatedButton.icon(
+                        icon: const Icon(Icons.location_off_outlined, size: 30),
+                        style: const ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll<Color>(
+                            Color.fromRGBO(7, 84, 16, 0.8),
+                          ),
+                          foregroundColor: WidgetStatePropertyAll<Color>(
+                            Colors.white,
+                          ),
+                          padding: WidgetStatePropertyAll<EdgeInsets>(
+                            EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                          ),
+                        ),
+                        onPressed: _stopService,
+                        label: Text(
+                          loc.stopLocationSharing,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        iconAlignment: _iconAlignment,
+                      )
+                    : ElevatedButton.icon(
+                        icon: const Icon(Icons.location_on_outlined, size: 30),
+                        style: const ButtonStyle(
+                          backgroundColor: WidgetStatePropertyAll<Color>(
+                            Color.fromRGBO(219, 79, 2, 0.8),
+                          ),
+                          foregroundColor: WidgetStatePropertyAll<Color>(
+                            Colors.white,
+                          ),
+                          padding: WidgetStatePropertyAll<EdgeInsets>(
+                            EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                          ),
+                        ),
+                        onPressed: _startService,
+                        label: Text(
+                          loc.startLocationSharing,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        iconAlignment: _iconAlignment,
                       ),
-                      foregroundColor: WidgetStatePropertyAll<Color>(
-                        Colors.white,
-                      ),
-                      padding: WidgetStatePropertyAll<EdgeInsets>(
-                        EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-                      ),
-                    ),
-                    onPressed: _stopService,
-                    label: Text(
-                      loc.stopLocationSharing,
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                    iconAlignment: _iconAlignment,
-                  )
-                : ElevatedButton.icon(
-                    icon: const Icon(Icons.location_on_outlined, size: 30),
-                    style: const ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll<Color>(
-                        Color.fromRGBO(219, 79, 2, 0.8),
-                      ),
-                      foregroundColor: WidgetStatePropertyAll<Color>(
-                        Colors.white,
-                      ),
-                      padding: WidgetStatePropertyAll<EdgeInsets>(
-                        EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-                      ),
-                    ),
-                    onPressed: _startService,
-                    label: Text(
-                      loc.startLocationSharing,
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                    iconAlignment: _iconAlignment,
-                  ),
+                // Status icon with minimal gap - always reserve space
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 32,
+                  child: _sharingState
+                      ? (_hasRecentLocation
+                            ? const Icon(
+                                Icons.gps_fixed,
+                                size: 32,
+                                color: Color.fromRGBO(7, 84, 16, 1.0),
+                              )
+                            : FadeTransition(
+                                opacity: _flashController,
+                                child: const Icon(
+                                  Icons.gps_not_fixed,
+                                  size: 32,
+                                  color: Color.fromRGBO(219, 79, 2, 1.0),
+                                ),
+                              ))
+                      : null, // Space reserved but no icon shown
+                ),
+              ],
+            ),
           ),
         ),
         // Lower half - event name and image display
