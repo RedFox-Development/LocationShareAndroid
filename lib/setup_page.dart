@@ -25,7 +25,7 @@ class _SetupPageState extends State<SetupPage> {
   DateTime? _selectedExpirationDate;
   String? _selectedTimezone;
   bool _isSaving = false;
-  bool _showManualEntry = false;
+  bool _showConfigurationReview = false;
   bool _isConfigLocked = false; // Lock all fields when loaded from QR code
 
   // Common timezones list
@@ -110,6 +110,24 @@ class _SetupPageState extends State<SetupPage> {
     try {
       final data = jsonDecode(qrData) as Map<String, dynamic>;
 
+      final hasRequiredFields =
+          data['teamName'] != null &&
+          data['event'] != null &&
+          data['apiUrl'] != null &&
+          data['expirationDate'] != null &&
+          data['timezone'] != null;
+
+      if (!hasRequiredFields) {
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loc.invalidQRFormat),
+            backgroundColor: Color.fromRGBO(188, 33, 52, 1.0),
+          ),
+        );
+        return;
+      }
+
       setState(() {
         if (data['teamName'] != null) {
           _teamNameController.text = data['teamName'];
@@ -151,8 +169,8 @@ class _SetupPageState extends State<SetupPage> {
         }
         // Lock all configuration when loaded from QR code
         _isConfigLocked = true;
-        // Switch to manual entry view to show populated fields
-        _showManualEntry = true;
+        // Switch to read-only review view after successful QR scan
+        _showConfigurationReview = true;
       });
 
       final loc = AppLocalizations.of(context);
@@ -227,7 +245,7 @@ class _SetupPageState extends State<SetupPage> {
 
         print('📦 Event info received:');
         print(
-          '   Image data: ${imageData != null ? "${imageData!.substring(0, 50)}..." : "null"}',
+          '   Image data: ${imageData != null ? "${imageData.substring(0, 50)}..." : "null"}',
         );
         print('   Image MIME: $imageMimeType');
 
@@ -243,7 +261,7 @@ class _SetupPageState extends State<SetupPage> {
       }
 
       print(
-        '💾 Saving configuration with imageData: ${imageData != null ? "YES (${imageData!.length} chars)" : "NO"}',
+        '💾 Saving configuration with imageData: ${imageData != null ? "YES (${imageData.length} chars)" : "NO"}',
       );
 
       await widget.appConfig.saveConfig(
@@ -354,7 +372,9 @@ class _SetupPageState extends State<SetupPage> {
         ],
       ),
       body: SafeArea(
-        child: _showManualEntry ? _buildManualEntryView() : _buildQRScanView(),
+        child: _showConfigurationReview
+            ? _buildConfigurationReviewView()
+            : _buildQRScanView(),
       ),
     );
   }
@@ -432,27 +452,13 @@ class _SetupPageState extends State<SetupPage> {
               ),
             ),
             const SizedBox(height: 32),
-            const Divider(),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _showManualEntry = true;
-                });
-              },
-              icon: const Icon(Icons.edit),
-              label: Text(loc.enterManually),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildManualEntryView() {
+  Widget _buildConfigurationReviewView() {
     final loc = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -461,29 +467,10 @@ class _SetupPageState extends State<SetupPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _showManualEntry = false;
-                    });
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: loc.backToQRScan,
-                ),
-                Expanded(
-                  child: Text(
-                    loc.manualConfiguration,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(width: 48), // Balance the back button
-              ],
+            Text(
+              loc.manualConfiguration,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
             if (_isConfigLocked)
               Container(

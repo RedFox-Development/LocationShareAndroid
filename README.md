@@ -50,5 +50,6 @@ The app uses a GraphQL API for both location updates and event data:
 
 ## Roadmap
 
+- Hide/obscure API URL?
 - testing with OP8T (Android 14)
   - battery consumption

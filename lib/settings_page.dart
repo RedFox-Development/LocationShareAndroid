@@ -137,75 +137,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildUrlsCard(BuildContext context) {
-    final apiUrl = widget.appConfig.apiUrl;
-    final isApiUrlSet =
-        apiUrl.isNotEmpty && apiUrl != 'https://your-project.vercel.app/api';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: apiUrl));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context).urlCopied,
-                style: const TextStyle(color: Colors.white),
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Color.fromRGBO(7, 84, 16, 0.7),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Icon(
-                Icons.cloud,
-                color: Color.fromRGBO(37, 55, 100, 1.0),
-                size: 24,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'API URL',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      apiUrl,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (isApiUrlSet) const SizedBox(width: 8),
-              if (isApiUrlSet)
-                Icon(
-                  Icons.check_circle,
-                  color: Color.fromRGBO(7, 84, 16, 1.0),
-                  size: 28,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildLanguageCard(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final currentLanguage = widget.appConfig.languageCode;
@@ -340,7 +271,6 @@ class _SettingsPageState extends State<SettingsPage> {
             value: widget.appConfig.event ?? loc.notSet,
           ),
           _buildDateTimezoneCard(context),
-          _buildUrlsCard(context),
           _buildLanguageCard(context),
           const SizedBox(height: 4),
           const Divider(),
