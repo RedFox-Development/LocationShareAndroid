@@ -383,6 +383,42 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _startService() async {
+    final startDate = widget.appConfig.startDate?.toUtc();
+    final nowUtc = DateTime.now().toUtc();
+
+    if (startDate != null && nowUtc.isBefore(startDate)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Location sharing can be activated after ${startDate.toLocal()}',
+            ),
+            backgroundColor: Color.fromRGBO(207, 131, 41, 1.0),
+          ),
+        );
+      }
+      return;
+    }
+
+    final endDate = widget.appConfig.endDate?.toUtc();
+    if (endDate != null && nowUtc.isAfter(endDate)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Event access has ended. Please configure again.'),
+            backgroundColor: Color.fromRGBO(188, 33, 52, 1.0),
+          ),
+        );
+      }
+      await widget.appConfig.clearConfig();
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/setup', (route) => false);
+      }
+      return;
+    }
+
     setState(() {
       _sharingState = true;
     });

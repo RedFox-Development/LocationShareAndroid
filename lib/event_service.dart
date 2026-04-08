@@ -2,6 +2,14 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 
 /// Service for fetching event data via GraphQL API
 class EventService {
+  static GraphQLClient _buildClient(String apiUrl) {
+    final httpLink = HttpLink(apiUrl);
+    return GraphQLClient(
+      link: httpLink,
+      cache: GraphQLCache(store: InMemoryStore()),
+    );
+  }
+
   /// Query event details including images by event name
   /// Returns event data with image_data and image_mime_type fields
   static Future<Map<String, dynamic>?> queryEventByName({
@@ -9,12 +17,7 @@ class EventService {
     required String eventName,
   }) async {
     try {
-      // Create GraphQL client
-      final httpLink = HttpLink(apiUrl);
-      final client = GraphQLClient(
-        link: httpLink,
-        cache: GraphQLCache(store: InMemoryStore()),
-      );
+      final client = _buildClient(apiUrl);
 
       // GraphQL query - note: this is a public query without authentication
       // It only fetches non-sensitive event data (name and images)
@@ -71,6 +74,98 @@ class EventService {
     } catch (e) {
       print('❌ Error querying event data: $e');
       return null;
+    }
+  }
+
+  /// Query setup metadata for a specific team + event pair.
+  static Future<Map<String, dynamic>?> queryTeamSetupConfig({
+    required String apiUrl,
+    required String eventName,
+    required String teamName,
+  }) async {
+    try {
+      final client = _buildClient(apiUrl);
+
+      const String query = r'''
+        query TeamSetupConfig($eventName: String!, $teamName: String!) {
+          teamSetupConfig(event_name: $eventName, team_name: $teamName) {
+            team_name
+            event_name
+            team_expiration_date
+            team_access_start_date
+            team_access_end_date
+            event_expiration_date
+            timezone
+            start_date
+            end_date
+            image_data
+            image_mime_type
+            logo_data
+            logo_mime_type
+            organization_name
+          }
+        }
+      ''';
+
+      final QueryOptions options = QueryOptions(
+        document: gql(query),
+        variables: {'eventName': eventName, 'teamName': teamName},
+      );
+
+      final QueryResult result = await client.query(options);
+      if (result.hasException) {
+        print(
+          '❌ GraphQL error querying team setup config: ${result.exception}',
+        );
+        return null;
+      }
+
+      return result.data?['teamSetupConfig'] as Map<String, dynamic>?;
+    } catch (e) {
+      print('❌ Error querying team setup config: $e');
+      return null;
+    }
+  }
+
+  /// Set team activation status by event and team names.
+  static Future<bool> setTeamActivated({
+    required String apiUrl,
+    required String eventName,
+    required String teamName,
+    bool activated = true,
+  }) async {
+    try {
+      final client = _buildClient(apiUrl);
+
+      const String mutation = r'''
+        mutation SetTeamActivated($eventName: String!, $teamName: String!, $activated: Boolean) {
+          setTeamActivated(event_name: $eventName, team_name: $teamName, activated: $activated) {
+            id
+            name
+            activated
+          }
+        }
+      ''';
+
+      final MutationOptions options = MutationOptions(
+        document: gql(mutation),
+        variables: {
+          'eventName': eventName,
+          'teamName': teamName,
+          'activated': activated,
+        },
+      );
+
+      final QueryResult result = await client.mutate(options);
+      if (result.hasException) {
+        print('❌ GraphQL error setting team activation: ${result.exception}');
+        return false;
+      }
+
+      return result.data?['setTeamActivated'] != null;
+    } catch (e) {
+      print('❌ Error setting team activation: $e');
+      return false;
     }
   }
 }

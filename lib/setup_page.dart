@@ -24,6 +24,8 @@ class _SetupPageState extends State<SetupPage> {
   );
   DateTime? _selectedExpirationDate;
   String? _selectedTimezone;
+  DateTime? _eventStartDate;
+  DateTime? _eventEndDate;
   bool _isSaving = false;
   bool _showConfigurationReview = false;
   bool _isConfigLocked = false; // Lock all fields when loaded from QR code
@@ -91,7 +93,7 @@ class _SetupPageState extends State<SetupPage> {
       );
 
       if (result != null && mounted) {
-        _parseQRData(result);
+        await _parseQRData(result);
       }
     } catch (e) {
       if (mounted) {
@@ -106,16 +108,14 @@ class _SetupPageState extends State<SetupPage> {
     }
   }
 
-  void _parseQRData(String qrData) {
+  Future<void> _parseQRData(String qrData) async {
     try {
       final data = jsonDecode(qrData) as Map<String, dynamic>;
 
       final hasRequiredFields =
           data['teamName'] != null &&
           data['event'] != null &&
-          data['apiUrl'] != null &&
-          data['expirationDate'] != null &&
-          data['timezone'] != null;
+          data['apiUrl'] != null;
 
       if (!hasRequiredFields) {
         final loc = AppLocalizations.of(context);
@@ -128,6 +128,68 @@ class _SetupPageState extends State<SetupPage> {
         return;
       }
 
+      final teamName = data['teamName'] as String;
+      final eventName = data['event'] as String;
+      final apiUrl = data['apiUrl'] as String;
+
+      final setupConfig = await EventService.queryTeamSetupConfig(
+        apiUrl: apiUrl,
+        eventName: eventName,
+        teamName: teamName,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (setupConfig == null) {
+        final loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loc.errorSavingConfig),
+            backgroundColor: Color.fromRGBO(188, 33, 52, 1.0),
+          ),
+        );
+        return;
+      }
+
+      DateTime? apiStartDate;
+      final startRaw = setupConfig['start_date'];
+      if (startRaw is String && startRaw.isNotEmpty) {
+        try {
+          apiStartDate = DateTime.parse(startRaw);
+        } catch (_) {
+          apiStartDate = null;
+        }
+      }
+
+      DateTime? apiEndDate;
+      final endRaw = setupConfig['end_date'];
+      if (endRaw is String && endRaw.isNotEmpty) {
+        try {
+          apiEndDate = DateTime.parse(endRaw);
+        } catch (_) {
+          apiEndDate = null;
+        }
+      }
+
+      if (apiEndDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Missing timeframe end timestamp in event configuration',
+            ),
+            backgroundColor: Color.fromRGBO(188, 33, 52, 1.0),
+          ),
+        );
+        return;
+      }
+
+      final apiTimezone =
+          (setupConfig['timezone'] as String?)?.trim().isNotEmpty == true
+          ? setupConfig['timezone'] as String
+          : 'UTC';
+
       setState(() {
         if (data['teamName'] != null) {
           _teamNameController.text = data['teamName'];
@@ -138,35 +200,11 @@ class _SetupPageState extends State<SetupPage> {
         if (data['apiUrl'] != null) {
           _apiUrlController.text = data['apiUrl'];
         }
-        if (data['expirationDate'] != null) {
-          try {
-            // Parse Unix timestamp in milliseconds
-            final timestamp = data['expirationDate'];
-            print('📅 Parsing expiration timestamp: $timestamp');
-            if (timestamp is int) {
-              _selectedExpirationDate = DateTime.fromMillisecondsSinceEpoch(
-                timestamp,
-              );
-            } else if (timestamp is String) {
-              _selectedExpirationDate = DateTime.fromMillisecondsSinceEpoch(
-                int.parse(timestamp),
-              );
-            } else {
-              print('⚠️ Unexpected timestamp type: ${timestamp.runtimeType}');
-            }
-            print(
-              '✅ Successfully parsed expiration date: $_selectedExpirationDate',
-            );
-          } catch (e) {
-            print(
-              '❌ Failed to parse expiration date: ${data['expirationDate']} - Error: $e',
-            );
-            // Invalid date format, ignore
-          }
-        }
-        if (data['timezone'] != null) {
-          _selectedTimezone = data['timezone'];
-        }
+        // Keep existing expiration field populated from timeframe end for compatibility.
+        _selectedExpirationDate = apiEndDate;
+        _selectedTimezone = apiTimezone;
+        _eventStartDate = apiStartDate;
+        _eventEndDate = apiEndDate;
         // Lock all configuration when loaded from QR code
         _isConfigLocked = true;
         // Switch to read-only review view after successful QR scan
@@ -177,7 +215,7 @@ class _SetupPageState extends State<SetupPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            loc.qrLoadedReview,
+            '${loc.qrLoadedReview} ($apiTimezone)',
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Color.fromRGBO(7, 84, 16, 0.8),
@@ -185,6 +223,9 @@ class _SetupPageState extends State<SetupPage> {
         ),
       );
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -201,10 +242,10 @@ class _SetupPageState extends State<SetupPage> {
       return;
     }
 
-    if (_selectedExpirationDate == null) {
+    if (_eventEndDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(loc.pleaseSelectDate),
+          content: const Text('Event end timestamp is required'),
           backgroundColor: Color.fromRGBO(207, 131, 41, 1.0),
         ),
       );
@@ -270,11 +311,22 @@ class _SetupPageState extends State<SetupPage> {
         apiUrl: apiUrl,
         imageData: imageData,
         imageMimeType: imageMimeType,
-        expirationDate: _selectedExpirationDate!,
+        expirationDate: _eventEndDate,
         timezone: _selectedTimezone!,
+        startDate: _eventStartDate,
+        endDate: _eventEndDate,
       );
 
       print('✅ Configuration saved to SharedPreferences');
+
+      final activationOk = await EventService.setTeamActivated(
+        apiUrl: apiUrl,
+        eventName: eventName,
+        teamName: _teamNameController.text.trim(),
+      );
+      if (!activationOk) {
+        print('⚠️ Failed to update team activation status');
+      }
 
       if (mounted) {
         // Show success message

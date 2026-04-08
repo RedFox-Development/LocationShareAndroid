@@ -13,6 +13,8 @@ class AppConfig {
   static const String _keyExpirationDate = 'expiration_date';
   static const String _keyLanguageCode = 'language_code';
   static const String _keyTimezone = 'timezone';
+  static const String _keyStartDate = 'start_date';
+  static const String _keyEndDate = 'end_date';
 
   final SharedPreferences _prefs;
 
@@ -34,23 +36,33 @@ class AppConfig {
   /// Check if initial setup has been completed
   bool get isSetupComplete => _prefs.getBool(_keySetupComplete) ?? false;
 
-  /// Check if the configuration has expired
+  /// Check if the configuration has expired (timeframe end reached)
   bool get isExpired {
+    final nowUtc = DateTime.now().toUtc();
+
+    // Timeframe end is the primary source of validity.
+    final timeframeEnd = endDate?.toUtc();
+    if (timeframeEnd != null) {
+      return nowUtc.isAfter(timeframeEnd);
+    }
+
+    // Backward compatibility fallback for older stored configs.
     final expirationDateStr = _prefs.getString(_keyExpirationDate);
     if (expirationDateStr == null) return false;
 
-    final expirationDate = DateTime.parse(expirationDateStr);
-    final now = DateTime.now();
-
-    // Compare dates only (ignore time)
-    final expirationDateOnly = DateTime(
-      expirationDate.year,
-      expirationDate.month,
-      expirationDate.day,
-    );
-    final nowDateOnly = DateTime(now.year, now.month, now.day);
-
-    return nowDateOnly.isAfter(expirationDateOnly);
+    try {
+      final expirationDate = DateTime.parse(expirationDateStr);
+      final expirationDateOnly = DateTime(
+        expirationDate.year,
+        expirationDate.month,
+        expirationDate.day,
+      );
+      final now = DateTime.now();
+      final nowDateOnly = DateTime(now.year, now.month, now.day);
+      return nowDateOnly.isAfter(expirationDateOnly);
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Get team name
@@ -94,6 +106,28 @@ class AppConfig {
   /// Get timezone (defaults to 'UTC')
   String get timezone => _prefs.getString(_keyTimezone) ?? 'UTC';
 
+  /// Get event access window start date
+  DateTime? get startDate {
+    final dateStr = _prefs.getString(_keyStartDate);
+    if (dateStr == null) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get event access window end date
+  DateTime? get endDate {
+    final dateStr = _prefs.getString(_keyEndDate);
+    if (dateStr == null) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Save configuration and mark setup as complete
   Future<void> saveConfig({
     required String teamName,
@@ -101,8 +135,10 @@ class AppConfig {
     required String apiUrl,
     String? imageData,
     String? imageMimeType,
-    required DateTime expirationDate,
+    DateTime? expirationDate,
     required String timezone,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     await _prefs.setString(_keyTeamName, teamName);
     await _prefs.setString(_keyEvent, event);
@@ -118,11 +154,31 @@ class AppConfig {
       await _prefs.remove(_keyImageMimeType);
     }
 
-    await _prefs.setString(
-      _keyExpirationDate,
-      '${expirationDate.year.toString().padLeft(4, '0')}-${expirationDate.month.toString().padLeft(2, '0')}-${expirationDate.day.toString().padLeft(2, '0')}',
-    );
+    if (expirationDate != null) {
+      await _prefs.setString(
+        _keyExpirationDate,
+        '${expirationDate.year.toString().padLeft(4, '0')}-${expirationDate.month.toString().padLeft(2, '0')}-${expirationDate.day.toString().padLeft(2, '0')}',
+      );
+    } else {
+      await _prefs.remove(_keyExpirationDate);
+    }
     await _prefs.setString(_keyTimezone, timezone);
+
+    if (startDate != null) {
+      await _prefs.setString(
+        _keyStartDate,
+        startDate.toUtc().toIso8601String(),
+      );
+    } else {
+      await _prefs.remove(_keyStartDate);
+    }
+
+    if (endDate != null) {
+      await _prefs.setString(_keyEndDate, endDate.toUtc().toIso8601String());
+    } else {
+      await _prefs.remove(_keyEndDate);
+    }
+
     await _prefs.setBool(_keySetupComplete, true);
   }
 
@@ -136,6 +192,8 @@ class AppConfig {
     await _prefs.remove(_keyImageMimeType);
     await _prefs.remove(_keyExpirationDate);
     await _prefs.remove(_keyTimezone);
+    await _prefs.remove(_keyStartDate);
+    await _prefs.remove(_keyEndDate);
     await _prefs.remove(_keySetupComplete);
   }
 }

@@ -104,6 +104,8 @@ class LocationService {
       final event = prefs.getString('event');
       final timezoneStr = prefs.getString('timezone') ?? 'UTC';
       final normalizedTimezone = _normalizeTimezoneId(timezoneStr);
+      final startDateStr = prefs.getString('start_date');
+      final endDateStr = prefs.getString('end_date');
 
       if (apiUrl == null || teamName == null || event == null) {
         print('❌ Missing configuration for location upload');
@@ -111,6 +113,24 @@ class LocationService {
         print('   Team Name: $teamName');
         print('   Event: $event');
         return false;
+      }
+
+      if (startDateStr != null && startDateStr.isNotEmpty) {
+        final startDate = DateTime.tryParse(startDateStr)?.toUtc();
+        if (startDate != null && timestamp.toUtc().isBefore(startDate)) {
+          print(
+            '🚫 Location upload blocked: event access window has not started',
+          );
+          return false;
+        }
+      }
+
+      if (endDateStr != null && endDateStr.isNotEmpty) {
+        final endDate = DateTime.tryParse(endDateStr)?.toUtc();
+        if (endDate != null && timestamp.toUtc().isAfter(endDate)) {
+          print('🚫 Location upload blocked: event access window has ended');
+          return false;
+        }
       }
 
       // Convert timestamp to configured timezone
