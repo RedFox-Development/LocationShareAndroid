@@ -12,6 +12,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location_share_android/main.dart';
 
+Future<void> _pumpPastSplash(WidgetTester tester) async {
+  await tester.pumpWidget(const AppLoader());
+  await tester.pump(const Duration(milliseconds: 4600));
+  for (int i = 0; i < 8; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -31,9 +39,11 @@ void main() {
       // Splash screen should be shown initially
       expect(find.text('Location Share'), findsOneWidget);
 
-      // Complete the timer to avoid pending timer error
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pump();
+      // Complete initialization timer to avoid pending timer errors.
+      await tester.pump(const Duration(milliseconds: 4600));
+      for (int i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
     });
 
     testWidgets('app navigates to setup when not configured', (
@@ -43,13 +53,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for 3-second splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      // Additional pumps to process state changes
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       // Should show setup page
       expect(find.text('Welcome!'), findsOneWidget);
@@ -67,22 +71,14 @@ void main() {
       addTearDown(tester.view.reset);
 
       SharedPreferences.setMockInitialValues({
-        'teamName': 'Test Team',
+        'team_name': 'Test Team',
         'event': 'Test Event',
-        'apiUrl': 'https://api.example.com/api',
-        'imageUrl': 'https://example.com/logo.png',
-        'expirationDate': '2026-12-31',
+        'api_url': 'https://api.example.com/api',
         'timezone': 'UTC',
         'setup_complete': true,
       });
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for 3-second splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      // Additional pumps to process state changes
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       // Should show home page with navigation
       expect(find.text('Sharing'), findsOneWidget);
@@ -96,22 +92,14 @@ void main() {
       addTearDown(tester.view.reset);
 
       SharedPreferences.setMockInitialValues({
-        'teamName': 'Test Team',
+        'team_name': 'Test Team',
         'event': 'Test Event',
-        'apiUrl': 'https://api.example.com/api',
-        'imageUrl': 'https://example.com/logo.png',
-        'expirationDate': '2026-12-31',
+        'api_url': 'https://api.example.com/api',
         'timezone': 'UTC',
         'setup_complete': true,
       });
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for 3-second splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      // Additional pumps to process state changes
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       // Tap Settings
       await tester.tap(find.text('Settings'));
@@ -141,12 +129,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       // MaterialApp should have both themes defined
       final materialApp = tester.widget<MaterialApp>(
@@ -163,12 +146,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       final materialApp = tester.widget<MaterialApp>(
         find.byType(MaterialApp).first,
@@ -188,13 +166,7 @@ void main() {
 
       SharedPreferences.setMockInitialValues({'language_code': 'en'});
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for 3-second splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      // Additional pumps to process state changes
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       expect(find.text('Welcome!'), findsOneWidget);
     });
@@ -208,13 +180,7 @@ void main() {
 
       SharedPreferences.setMockInitialValues({'language_code': 'fi'});
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for 3-second splash screen delay
-      await tester.pump(const Duration(seconds: 3));
-      // Additional pumps to process state changes
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       expect(find.text('Tervetuloa!'), findsOneWidget);
     });
@@ -226,12 +192,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(const AppLoader());
-      // Wait for splash screen delay to get the actual MyApp
-      await tester.pump(const Duration(seconds: 3));
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      await _pumpPastSplash(tester);
 
       final materialApp = tester.widget<MaterialApp>(
         find.byType(MaterialApp).first,
@@ -255,16 +216,13 @@ void main() {
       // Immediately after first frame
       expect(find.text('Location Share'), findsOneWidget);
 
-      // After 1 second (still within 3s minimum)
+      // After 1 second, splash should still be shown.
       await tester.pump(const Duration(seconds: 1));
       expect(find.text('Location Share'), findsOneWidget);
 
-      // After 3 seconds, should transition
-      await tester.pump(const Duration(seconds: 2));
-      // Additional pumps to process state changes
-      for (int i = 0; i < 3; i++) {
-        await tester.pump();
-      }
+      // After 4.6 seconds total, should transition.
+      await tester.pump(const Duration(milliseconds: 3600));
+      await tester.pumpAndSettle();
 
       // Should now be on setup or home page
       expect(find.text('Welcome!'), findsAny);

@@ -61,7 +61,8 @@ void main() {
         teamName: 'New Team',
         event: 'New Event',
         apiUrl: 'https://new-api.com/api',
-        imageUrl: 'https://new.com/image.png',
+        imageData: 'ZmFrZV9pbWFnZV9kYXRh',
+        imageMimeType: 'image/png',
         expirationDate: DateTime(2027, 6, 15),
         timezone: 'Europe/Helsinki',
       );
@@ -70,7 +71,8 @@ void main() {
       expect(prefs.getString('team_name'), equals('New Team'));
       expect(prefs.getString('event'), equals('New Event'));
       expect(prefs.getString('api_url'), equals('https://new-api.com/api'));
-      expect(prefs.getString('image_url'), equals('https://new.com/image.png'));
+      expect(prefs.getString('image_data'), equals('ZmFrZV9pbWFnZV9kYXRh'));
+      expect(prefs.getString('image_mime_type'), equals('image/png'));
       expect(prefs.getString('expiration_date'), equals('2027-06-15'));
       expect(prefs.getString('timezone'), equals('Europe/Helsinki'));
     });
@@ -83,7 +85,8 @@ void main() {
         teamName: 'Team',
         event: 'Event',
         apiUrl: 'https://api.com/api',
-        imageUrl: 'https://image.com/logo.png',
+        imageData: 'dGVzdA==',
+        imageMimeType: 'image/png',
         expirationDate: DateTime(2027, 1, 1),
         timezone: 'UTC',
       );
@@ -131,7 +134,8 @@ void main() {
         teamName: 'Team',
         event: 'Event',
         apiUrl: 'https://api.com/api',
-        imageUrl: 'https://image.com/logo.png',
+        imageData: 'dGVzdA==',
+        imageMimeType: 'image/png',
         expirationDate: DateTime(2027, 1, 1),
         timezone: 'UTC',
       );
@@ -215,7 +219,8 @@ void main() {
         teamName: 'Team',
         event: 'Event',
         apiUrl: 'https://api.com/api',
-        imageUrl: 'https://image.com/logo.png',
+        imageData: 'dGVzdA==',
+        imageMimeType: 'image/png',
         expirationDate: DateTime(2026, 3, 15),
         timezone: 'UTC',
       );

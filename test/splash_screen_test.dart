@@ -17,7 +17,7 @@ void main() {
       final imageFinder = find.byType(Image);
       final Image imageWidget = tester.widget(imageFinder);
       final AssetImage assetImage = imageWidget.image as AssetImage;
-      expect(assetImage.assetName, equals('assets/dev/icon.png'));
+      expect(assetImage.assetName, equals('assets/icon.png'));
     });
 
     testWidgets('displays app title', (WidgetTester tester) async {

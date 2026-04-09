@@ -65,7 +65,7 @@ void main() {
       final imageFinder = find.byType(Image);
       final Image imageWidget = tester.widget(imageFinder);
       final AssetImage assetImage = imageWidget.image as AssetImage;
-      expect(assetImage.assetName, equals('assets/dev/redfox_dev_app.png'));
+      expect(assetImage.assetName, equals('assets/redfox_dev_app.png'));
     });
 
     testWidgets('displays developer name', (WidgetTester tester) async {
