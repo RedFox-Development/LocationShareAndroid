@@ -106,7 +106,7 @@ class _SetupPageState extends State<SetupPage> {
       }
 
       DateTime? teamAccessStartDate;
-      final teamAccessStartRaw = setupConfig['team_access_start_date'];
+      final teamAccessStartRaw = setupConfig['timeframe_start'];
       if (teamAccessStartRaw is String && teamAccessStartRaw.isNotEmpty) {
         try {
           teamAccessStartDate = DateTime.parse(teamAccessStartRaw);
@@ -114,7 +114,7 @@ class _SetupPageState extends State<SetupPage> {
       }
 
       DateTime? teamAccessEndDate;
-      final teamAccessEndRaw = setupConfig['team_access_end_date'];
+      final teamAccessEndRaw = setupConfig['timeframe_end'];
       if (teamAccessEndRaw is String && teamAccessEndRaw.isNotEmpty) {
         try {
           teamAccessEndDate = DateTime.parse(teamAccessEndRaw);
@@ -243,8 +243,8 @@ class _SetupPageState extends State<SetupPage> {
         imageData: imageData,
         imageMimeType: imageMimeType,
         timezone: _selectedTimezone!,
-        teamAccessStartDate: _teamAccessStartDate,
-        teamAccessEndDate: _teamAccessEndDate,
+        timeframeStartDate: _teamAccessStartDate,
+        timeframeEndDate: _teamAccessEndDate,
       );
 
       print('✅ Configuration saved');

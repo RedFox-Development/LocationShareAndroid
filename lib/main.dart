@@ -383,7 +383,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _startService() async {
-    final startDate = widget.appConfig.startDate?.toUtc();
+    final startDate = widget.appConfig.timeframeStartDate?.toUtc();
     final nowUtc = DateTime.now().toUtc();
 
     if (startDate != null && nowUtc.isBefore(startDate)) {
@@ -400,7 +400,7 @@ class _HomePageState extends State<HomePage>
       return;
     }
 
-    final endDate = widget.appConfig.endDate?.toUtc();
+    final endDate = widget.appConfig.timeframeEndDate?.toUtc();
     if (endDate != null && nowUtc.isAfter(endDate)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

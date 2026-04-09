@@ -75,8 +75,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildTimeFrameCard(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final start = widget.appConfig.teamAccessStartDate;
-    final end = widget.appConfig.teamAccessEndDate;
+    final start = widget.appConfig.timeframeStartDate;
+    final end = widget.appConfig.timeframeEndDate;
 
     final isFinnish = Localizations.localeOf(context).languageCode == 'fi';
     final timeframeLabel = isFinnish ? 'Aikarajat' : 'Time frame';

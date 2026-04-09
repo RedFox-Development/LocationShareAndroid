@@ -91,13 +91,10 @@ class EventService {
           teamSetupConfig(event_name: $eventName, team_name: $teamName) {
             team_name
             event_name
-            team_expiration_date
-            team_access_start_date
-            team_access_end_date
+            timeframe_start
+            timeframe_end
             event_expiration_date
             timezone
-            start_date
-            end_date
             image_data
             image_mime_type
             logo_data
