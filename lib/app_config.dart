@@ -15,6 +15,8 @@ class AppConfig {
   static const String _keyTimezone = 'timezone';
   static const String _keyStartDate = 'start_date';
   static const String _keyEndDate = 'end_date';
+  static const String _keyTeamAccessStartDate = 'team_access_start_date';
+  static const String _keyTeamAccessEndDate = 'team_access_end_date';
 
   final SharedPreferences _prefs;
 
@@ -39,6 +41,15 @@ class AppConfig {
   /// Check if the configuration has expired (timeframe end reached)
   bool get isExpired {
     final nowUtc = DateTime.now().toUtc();
+
+    // Check team access window - if configured, must be within the window
+    final teamAccessStart = teamAccessStartDate?.toUtc();
+    final teamAccessEnd = teamAccessEndDate?.toUtc();
+    if (teamAccessStart != null && teamAccessEnd != null) {
+      if (nowUtc.isBefore(teamAccessStart) || nowUtc.isAfter(teamAccessEnd)) {
+        return true; // Outside team access window
+      }
+    }
 
     // Timeframe end is the primary source of validity.
     final timeframeEnd = endDate?.toUtc();
@@ -98,6 +109,28 @@ class AppConfig {
   /// Get language code (defaults to 'en')
   String get languageCode => _prefs.getString(_keyLanguageCode) ?? 'en';
 
+  /// Get team access start date
+  DateTime? get teamAccessStartDate {
+    final dateStr = _prefs.getString(_keyTeamAccessStartDate);
+    if (dateStr == null) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get team access end date
+  DateTime? get teamAccessEndDate {
+    final dateStr = _prefs.getString(_keyTeamAccessEndDate);
+    if (dateStr == null) return null;
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Set language code
   Future<void> setLanguage(String languageCode) async {
     await _prefs.setString(_keyLanguageCode, languageCode);
@@ -139,6 +172,8 @@ class AppConfig {
     required String timezone,
     DateTime? startDate,
     DateTime? endDate,
+    DateTime? teamAccessStartDate,
+    DateTime? teamAccessEndDate,
   }) async {
     await _prefs.setString(_keyTeamName, teamName);
     await _prefs.setString(_keyEvent, event);
@@ -179,6 +214,24 @@ class AppConfig {
       await _prefs.remove(_keyEndDate);
     }
 
+    if (teamAccessStartDate != null) {
+      await _prefs.setString(
+        _keyTeamAccessStartDate,
+        teamAccessStartDate.toUtc().toIso8601String(),
+      );
+    } else {
+      await _prefs.remove(_keyTeamAccessStartDate);
+    }
+
+    if (teamAccessEndDate != null) {
+      await _prefs.setString(
+        _keyTeamAccessEndDate,
+        teamAccessEndDate.toUtc().toIso8601String(),
+      );
+    } else {
+      await _prefs.remove(_keyTeamAccessEndDate);
+    }
+
     await _prefs.setBool(_keySetupComplete, true);
   }
 
@@ -194,6 +247,8 @@ class AppConfig {
     await _prefs.remove(_keyTimezone);
     await _prefs.remove(_keyStartDate);
     await _prefs.remove(_keyEndDate);
+    await _prefs.remove(_keyTeamAccessStartDate);
+    await _prefs.remove(_keyTeamAccessEndDate);
     await _prefs.remove(_keySetupComplete);
   }
 }

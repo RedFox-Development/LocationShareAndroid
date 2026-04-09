@@ -106,6 +106,8 @@ class LocationService {
       final normalizedTimezone = _normalizeTimezoneId(timezoneStr);
       final startDateStr = prefs.getString('start_date');
       final endDateStr = prefs.getString('end_date');
+      final teamAccessStartDateStr = prefs.getString('team_access_start_date');
+      final teamAccessEndDateStr = prefs.getString('team_access_end_date');
 
       if (apiUrl == null || teamName == null || event == null) {
         print('❌ Missing configuration for location upload');
@@ -113,6 +115,31 @@ class LocationService {
         print('   Team Name: $teamName');
         print('   Event: $event');
         return false;
+      }
+
+      // Check team access window
+      if (teamAccessStartDateStr != null && teamAccessStartDateStr.isNotEmpty) {
+        final teamAccessStartDate = DateTime.tryParse(
+          teamAccessStartDateStr,
+        )?.toUtc();
+        if (teamAccessStartDate != null &&
+            timestamp.toUtc().isBefore(teamAccessStartDate)) {
+          print(
+            '🚫 Location upload blocked: team access window has not started',
+          );
+          return false;
+        }
+      }
+
+      if (teamAccessEndDateStr != null && teamAccessEndDateStr.isNotEmpty) {
+        final teamAccessEndDate = DateTime.tryParse(
+          teamAccessEndDateStr,
+        )?.toUtc();
+        if (teamAccessEndDate != null &&
+            timestamp.toUtc().isAfter(teamAccessEndDate)) {
+          print('🚫 Location upload blocked: team access window has ended');
+          return false;
+        }
       }
 
       if (startDateStr != null && startDateStr.isNotEmpty) {

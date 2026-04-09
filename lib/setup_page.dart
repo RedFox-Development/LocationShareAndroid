@@ -8,7 +8,6 @@ import 'main.dart';
 
 class SetupPage extends StatefulWidget {
   final AppConfig appConfig;
-
   const SetupPage({super.key, required this.appConfig});
 
   @override
@@ -16,39 +15,17 @@ class SetupPage extends StatefulWidget {
 }
 
 class _SetupPageState extends State<SetupPage> {
-  final _formKey = GlobalKey<FormState>();
   final _teamNameController = TextEditingController();
   final _eventController = TextEditingController();
   final _apiUrlController = TextEditingController(
     text: 'https://your-project.vercel.app/api',
   );
-  DateTime? _selectedExpirationDate;
+
+  DateTime? _teamAccessStartDate;
+  DateTime? _teamAccessEndDate;
   String? _selectedTimezone;
-  DateTime? _eventStartDate;
-  DateTime? _eventEndDate;
   bool _isSaving = false;
   bool _showConfigurationReview = false;
-  bool _isConfigLocked = false; // Lock all fields when loaded from QR code
-
-  // Common timezones list
-  final List<String> _commonTimezones = [
-    'UTC',
-    'Europe/Helsinki',
-    'Europe/London',
-    'Europe/Paris',
-    'Europe/Berlin',
-    'Europe/Stockholm',
-    'Europe/Oslo',
-    'Europe/Copenhagen',
-    'America/New_York',
-    'America/Chicago',
-    'America/Los_Angeles',
-    'America/Toronto',
-    'Asia/Tokyo',
-    'Asia/Shanghai',
-    'Asia/Dubai',
-    'Australia/Sydney',
-  ];
 
   @override
   void dispose() {
@@ -58,30 +35,8 @@ class _SetupPageState extends State<SetupPage> {
     super.dispose();
   }
 
-  Future<void> _selectExpirationDate() async {
-    final loc = AppLocalizations.of(context);
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate:
-          _selectedExpirationDate ??
-          DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: loc.selectExpirationDate,
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedExpirationDate = picked;
-      });
-    }
-  }
-
   String _formatDate(DateTime? date) {
-    if (date == null) {
-      final loc = AppLocalizations.of(context);
-      return loc.notSelected;
-    }
+    if (date == null) return 'Not selected';
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
@@ -91,7 +46,6 @@ class _SetupPageState extends State<SetupPage> {
         context,
         MaterialPageRoute(builder: (context) => const QRScannerPage()),
       );
-
       if (result != null && mounted) {
         await _parseQRData(result);
       }
@@ -138,9 +92,7 @@ class _SetupPageState extends State<SetupPage> {
         teamName: teamName,
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (setupConfig == null) {
         final loc = AppLocalizations.of(context);
@@ -153,32 +105,26 @@ class _SetupPageState extends State<SetupPage> {
         return;
       }
 
-      DateTime? apiStartDate;
-      final startRaw = setupConfig['start_date'];
-      if (startRaw is String && startRaw.isNotEmpty) {
+      DateTime? teamAccessStartDate;
+      final teamAccessStartRaw = setupConfig['team_access_start_date'];
+      if (teamAccessStartRaw is String && teamAccessStartRaw.isNotEmpty) {
         try {
-          apiStartDate = DateTime.parse(startRaw);
-        } catch (_) {
-          apiStartDate = null;
-        }
+          teamAccessStartDate = DateTime.parse(teamAccessStartRaw);
+        } catch (_) {}
       }
 
-      DateTime? apiEndDate;
-      final endRaw = setupConfig['end_date'];
-      if (endRaw is String && endRaw.isNotEmpty) {
+      DateTime? teamAccessEndDate;
+      final teamAccessEndRaw = setupConfig['team_access_end_date'];
+      if (teamAccessEndRaw is String && teamAccessEndRaw.isNotEmpty) {
         try {
-          apiEndDate = DateTime.parse(endRaw);
-        } catch (_) {
-          apiEndDate = null;
-        }
+          teamAccessEndDate = DateTime.parse(teamAccessEndRaw);
+        } catch (_) {}
       }
 
-      if (apiEndDate == null) {
+      if (teamAccessEndDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Missing timeframe end timestamp in event configuration',
-            ),
+          const SnackBar(
+            content: Text('Team access window not configured by organizer'),
             backgroundColor: Color.fromRGBO(188, 33, 52, 1.0),
           ),
         );
@@ -191,41 +137,30 @@ class _SetupPageState extends State<SetupPage> {
           : 'UTC';
 
       setState(() {
-        if (data['teamName'] != null) {
-          _teamNameController.text = data['teamName'];
-        }
-        if (data['event'] != null) {
-          _eventController.text = data['event'];
-        }
-        if (data['apiUrl'] != null) {
-          _apiUrlController.text = data['apiUrl'];
-        }
-        // Keep existing expiration field populated from timeframe end for compatibility.
-        _selectedExpirationDate = apiEndDate;
+        _teamNameController.text = data['teamName'] ?? '';
+        _eventController.text = data['event'] ?? '';
+        _apiUrlController.text = data['apiUrl'] ?? '';
         _selectedTimezone = apiTimezone;
-        _eventStartDate = apiStartDate;
-        _eventEndDate = apiEndDate;
-        // Lock all configuration when loaded from QR code
-        _isConfigLocked = true;
-        // Switch to read-only review view after successful QR scan
+        _teamAccessStartDate = teamAccessStartDate;
+        _teamAccessEndDate = teamAccessEndDate;
         _showConfigurationReview = true;
       });
 
       final loc = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${loc.qrLoadedReview} ($apiTimezone)',
-            style: const TextStyle(color: Colors.white),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${loc.qrLoadedReview} ($apiTimezone)',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Color.fromRGBO(7, 84, 16, 0.8),
+            duration: const Duration(seconds: 3),
           ),
-          backgroundColor: Color.fromRGBO(7, 84, 16, 0.8),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) {
-        return;
+        );
       }
+    } catch (e) {
+      if (!mounted) return;
       final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -236,41 +171,57 @@ class _SetupPageState extends State<SetupPage> {
     }
   }
 
+  Future<void> _resetConfiguration() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Configuration'),
+        content: const Text(
+          'Are you sure you want to reset the configuration? You will need to scan the QR code again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reset', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      await widget.appConfig.clearConfig();
+      setState(() {
+        _teamNameController.clear();
+        _eventController.clear();
+        _apiUrlController.text = 'https://your-project.vercel.app/api';
+        _selectedTimezone = null;
+        _teamAccessStartDate = null;
+        _teamAccessEndDate = null;
+        _showConfigurationReview = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Configuration reset'),
+            backgroundColor: Color.fromRGBO(7, 84, 16, 0.8),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _saveConfiguration() async {
     final loc = AppLocalizations.of(context);
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_eventEndDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Event end timestamp is required'),
-          backgroundColor: Color.fromRGBO(207, 131, 41, 1.0),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedTimezone == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc.pleaseSelectTimezone),
-          backgroundColor: Color.fromRGBO(207, 131, 41, 1.0),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
+    setState(() => _isSaving = true);
 
     try {
-      // Fetch event data from GraphQL API to get images
       String? imageData;
       String? imageMimeType;
-
       final eventName = _eventController.text.trim();
       final apiUrl = _apiUrlController.text.trim();
 
@@ -283,27 +234,7 @@ class _SetupPageState extends State<SetupPage> {
       if (eventInfo != null) {
         imageData = eventInfo['image_data'] as String?;
         imageMimeType = eventInfo['image_mime_type'] as String?;
-
-        print('📦 Event info received:');
-        print(
-          '   Image data: ${imageData != null ? "${imageData.substring(0, 50)}..." : "null"}',
-        );
-        print('   Image MIME: $imageMimeType');
-
-        if (imageData != null && imageMimeType != null) {
-          print('✅ Event images fetched from API');
-        } else {
-          print('ℹ️ No images configured for this event');
-        }
-      } else {
-        print(
-          '⚠️ Could not fetch event data from API, continuing without images',
-        );
       }
-
-      print(
-        '💾 Saving configuration with imageData: ${imageData != null ? "YES (${imageData.length} chars)" : "NO"}',
-      );
 
       await widget.appConfig.saveConfig(
         teamName: _teamNameController.text.trim(),
@@ -311,25 +242,20 @@ class _SetupPageState extends State<SetupPage> {
         apiUrl: apiUrl,
         imageData: imageData,
         imageMimeType: imageMimeType,
-        expirationDate: _eventEndDate,
         timezone: _selectedTimezone!,
-        startDate: _eventStartDate,
-        endDate: _eventEndDate,
+        teamAccessStartDate: _teamAccessStartDate,
+        teamAccessEndDate: _teamAccessEndDate,
       );
 
-      print('✅ Configuration saved to SharedPreferences');
+      print('✅ Configuration saved');
 
-      final activationOk = await EventService.setTeamActivated(
+      await EventService.setTeamActivated(
         apiUrl: apiUrl,
         eventName: eventName,
         teamName: _teamNameController.text.trim(),
       );
-      if (!activationOk) {
-        print('⚠️ Failed to update team activation status');
-      }
 
       if (mounted) {
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -340,14 +266,13 @@ class _SetupPageState extends State<SetupPage> {
           ),
         );
 
-        // Navigate to home page after a short delay
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/home');
         }
       }
     } catch (e) {
-      print('❌ Error saving configuration: $e');
+      print('❌ Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -358,18 +283,14 @@ class _SetupPageState extends State<SetupPage> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
+        setState(() => _isSaving = false);
       }
     }
   }
 
   Future<void> _changeLanguage(String languageCode) async {
     await widget.appConfig.setLanguage(languageCode);
-
     if (mounted) {
-      // Update the app's locale
       final appState = MyApp.of(context);
       if (appState != null) {
         final newLocale = languageCode == 'fi'
@@ -377,7 +298,6 @@ class _SetupPageState extends State<SetupPage> {
             : const Locale('en', 'GB');
         appState.setLocale(newLocale);
       }
-
       setState(() {});
     }
   }
@@ -390,14 +310,13 @@ class _SetupPageState extends State<SetupPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.initialSetup),
-        automaticallyImplyLeading: false, // Prevent back navigation
+        automaticallyImplyLeading: false,
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.language),
-            tooltip: loc.language,
             onSelected: _changeLanguage,
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
+            itemBuilder: (context) => [
+              PopupMenuItem(
                 value: 'en',
                 child: Row(
                   children: [
@@ -408,7 +327,7 @@ class _SetupPageState extends State<SetupPage> {
                   ],
                 ),
               ),
-              PopupMenuItem<String>(
+              PopupMenuItem(
                 value: 'fi',
                 child: Row(
                   children: [
@@ -433,7 +352,6 @@ class _SetupPageState extends State<SetupPage> {
 
   Widget _buildQRScanView() {
     final loc = AppLocalizations.of(context);
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -446,7 +364,6 @@ class _SetupPageState extends State<SetupPage> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Dev logo - positioned to the right (background)
                   Positioned(
                     right: 5,
                     child: Image.asset(
@@ -456,7 +373,6 @@ class _SetupPageState extends State<SetupPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
-                  // App icon - positioned to the left (foreground, on top)
                   Positioned(
                     left: 5,
                     child: ClipRRect(
@@ -479,15 +395,13 @@ class _SetupPageState extends State<SetupPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            Builder(
-              builder: (context) => Text(
-                loc.scanQRPrompt,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                textAlign: TextAlign.center,
+            Text(
+              loc.scanQRPrompt,
+              style: TextStyle(
+                fontSize: 18,
+                color: Theme.of(context).colorScheme.outline,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
             ElevatedButton.icon(
@@ -503,7 +417,6 @@ class _SetupPageState extends State<SetupPage> {
                 foregroundColor: Colors.white,
               ),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -511,217 +424,161 @@ class _SetupPageState extends State<SetupPage> {
   }
 
   Widget _buildConfigurationReviewView() {
-    final loc = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              loc.manualConfiguration,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Configuration Review',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!, width: 1),
             ),
-            if (_isConfigLocked)
-              Container(
-                margin: const EdgeInsets.only(top: 16, bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(7, 84, 16, 0.1),
-                  border: Border.all(
-                    color: Color.fromRGBO(7, 84, 16, 0.3),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow('Team', _teamNameController.text),
+                const SizedBox(height: 16),
+                _buildInfoRow('Event', _eventController.text),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (_teamAccessStartDate != null || _teamAccessEndDate != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Color.fromRGBO(7, 84, 16, 0.05),
+                border: Border.all(
+                  color: Color.fromRGBO(7, 84, 16, 0.2),
+                  width: 1,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.lock,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Team Access Window',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: Color.fromRGBO(7, 84, 16, 1.0),
-                      size: 20,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Configuration locked from QR code. All fields are set by the organizer.',
-                        style: TextStyle(
-                          color: Color.fromRGBO(7, 84, 16, 1.0),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Start',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(_teamAccessStartDate),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _teamNameController,
-              decoration: InputDecoration(
-                labelText: loc.teamName,
-                hintText: loc.teamNameHint,
-                prefixIcon: const Icon(Icons.group),
-                border: const OutlineInputBorder(),
-              ),
-              enabled: !_isConfigLocked,
-              readOnly: _isConfigLocked,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return loc.fieldRequired(loc.teamName);
-                }
-                return null;
-              },
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _eventController,
-              decoration: InputDecoration(
-                labelText: loc.event,
-                hintText: loc.eventHint,
-                prefixIcon: const Icon(Icons.event),
-                border: const OutlineInputBorder(),
-              ),
-              enabled: !_isConfigLocked,
-              readOnly: _isConfigLocked,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return loc.fieldRequired(loc.event);
-                }
-                return null;
-              },
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _apiUrlController,
-              decoration: InputDecoration(
-                labelText: 'API URL',
-                hintText: 'https://your-project.vercel.app/api',
-                prefixIcon: const Icon(Icons.cloud),
-                border: const OutlineInputBorder(),
-                helperText: 'GraphQL API endpoint',
-              ),
-              enabled: !_isConfigLocked,
-              readOnly: _isConfigLocked,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'API URL is required';
-                }
-                final uri = Uri.tryParse(value.trim());
-                if (uri == null ||
-                    !uri.hasScheme ||
-                    !uri.scheme.startsWith('http')) {
-                  return 'Enter a valid URL';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 20),
-            InkWell(
-              onTap: _isConfigLocked ? null : _selectExpirationDate,
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: loc.expirationDate,
-                  hintText: loc.expirationDateHint,
-                  prefixIcon: const Icon(Icons.calendar_today),
-                  border: const OutlineInputBorder(),
-                  enabled: !_isConfigLocked,
-                ),
-                child: Builder(
-                  builder: (context) => Text(
-                    _formatDate(_selectedExpirationDate),
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: _selectedExpirationDate == null
-                          ? Theme.of(context).colorScheme.outline
-                          : _isConfigLocked
-                          ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (_selectedExpirationDate != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, left: 12.0),
-                child: Builder(
-                  builder: (context) => Text(
-                    _isConfigLocked
-                        ? '${loc.configWillReset} (Set by organizer)'
-                        : loc.configWillReset,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _isConfigLocked
-                          ? Color.fromRGBO(7, 84, 16, 1.0)
-                          : Theme.of(context).colorScheme.outline,
-                      fontWeight: _isConfigLocked
-                          ? FontWeight.w500
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              value: _selectedTimezone,
-              decoration: InputDecoration(
-                labelText: loc.timezone,
-                hintText: loc.selectTimezone,
-                prefixIcon: const Icon(Icons.public),
-                border: const OutlineInputBorder(),
-              ),
-              items: _commonTimezones.map((String timezone) {
-                return DropdownMenuItem<String>(
-                  value: timezone,
-                  child: Text(timezone),
-                );
-              }).toList(),
-              onChanged: _isConfigLocked
-                  ? null
-                  : (String? newValue) {
-                      setState(() {
-                        _selectedTimezone = newValue;
-                      });
-                    },
-              validator: (value) {
-                if (value == null) {
-                  return loc.timezoneRequired;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _saveConfiguration,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Color.fromRGBO(7, 84, 16, 0.8),
-                foregroundColor: Colors.white,
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'End',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(_teamAccessEndDate),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    )
-                  : Text(
-                      loc.saveConfiguration,
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          const SizedBox(height: 40),
+          ElevatedButton(
+            onPressed: _isSaving ? null : _saveConfiguration,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Color.fromRGBO(7, 84, 16, 0.8),
+              foregroundColor: Colors.white,
+            ),
+            child: _isSaving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text('Save & Continue', style: TextStyle(fontSize: 18)),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: _resetConfiguration,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+            ),
+            child: const Text('Reset', style: TextStyle(fontSize: 16)),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 }

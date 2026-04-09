@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'app_config.dart';
 import 'main.dart';
 import 'l10n/app_localizations.dart';
@@ -74,62 +73,104 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: Color.fromRGBO(37, 55, 100, 1.0), size: 20),
-              const SizedBox(width: 8),
-              Builder(
-                builder: (context) => Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateTimezoneCard(BuildContext context) {
+  Widget _buildTimeFrameCard(BuildContext context) {
     final loc = AppLocalizations.of(context);
+    final start = widget.appConfig.teamAccessStartDate;
+    final end = widget.appConfig.teamAccessEndDate;
+
+    final isFinnish = Localizations.localeOf(context).languageCode == 'fi';
+    final timeframeLabel = isFinnish ? 'Aikarajat' : 'Time frame';
+    final startLabel = isFinnish ? 'Alku' : 'Start';
+    final endLabel = isFinnish ? 'Loppu' : 'End';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoItem(
-              icon: Icons.calendar_today,
-              label: loc.expirationDate,
-              value: widget.appConfig.expirationDate != null
-                  ? _formatDate(widget.appConfig.expirationDate!)
-                  : loc.notSet,
+            Row(
+              children: [
+                const Icon(
+                  Icons.schedule,
+                  color: Color.fromRGBO(0, 67, 89, 1.0),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  timeframeLabel,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color.fromRGBO(0, 67, 89, 1.0),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 24),
-            _buildInfoItem(
-              icon: Icons.public,
-              label: loc.timezone,
-              value: widget.appConfig.timezone,
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        startLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        start != null ? _formatDate(start) : loc.notSet,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      _buildTimeWithTimezone(
+                        context,
+                        start,
+                        widget.appConfig.timezone,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        endLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        end != null ? _formatDate(end) : loc.notSet,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      _buildTimeWithTimezone(
+                        context,
+                        end,
+                        widget.appConfig.timezone,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -206,6 +247,61 @@ class _SettingsPageState extends State<SettingsPage> {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildTimeWithTimezone(
+    BuildContext context,
+    DateTime? value,
+    String timezone,
+  ) {
+    final loc = AppLocalizations.of(context);
+
+    if (value == null) {
+      return Text(
+        loc.notSet,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+      );
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+        children: [
+          TextSpan(text: _formatTime(value)),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.top,
+            child: Transform.translate(
+              offset: const Offset(0, -5),
+              child: Text(
+                ' $timezone',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionDivider() {
+    return const Column(
+      children: [SizedBox(height: 4), Divider(), SizedBox(height: 4)],
+    );
+  }
+
   Widget _buildConfigItem({
     required IconData icon,
     required String label,
@@ -248,8 +344,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
+    final isFinnish = Localizations.localeOf(context).languageCode == 'fi';
+    final teamLabel = isFinnish ? 'Ryhmän nimi' : loc.teamName;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -262,7 +362,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
           _buildConfigItem(
             icon: Icons.group,
-            label: loc.teamName,
+            label: teamLabel,
             value: widget.appConfig.teamName ?? loc.notSet,
           ),
           _buildConfigItem(
@@ -270,11 +370,11 @@ class _SettingsPageState extends State<SettingsPage> {
             label: loc.event,
             value: widget.appConfig.event ?? loc.notSet,
           ),
-          _buildDateTimezoneCard(context),
+          _buildSectionDivider(),
+          _buildTimeFrameCard(context),
+          _buildSectionDivider(),
           _buildLanguageCard(context),
-          const SizedBox(height: 4),
-          const Divider(),
-          const SizedBox(height: 4),
+          _buildSectionDivider(),
           OutlinedButton.icon(
             onPressed: () => _showResetConfirmationDialog(context),
             icon: const Icon(Icons.refresh),
