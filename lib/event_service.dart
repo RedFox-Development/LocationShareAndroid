@@ -100,6 +100,7 @@ class EventService {
             logo_data
             logo_mime_type
             organization_name
+            update_frequency
           }
         }
       ''';

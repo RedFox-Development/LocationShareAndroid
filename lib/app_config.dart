@@ -15,6 +15,7 @@ class AppConfig {
   static const String _keyTimezone = 'timezone';
   static const String _keyTimeframeStartDate = 'timeframe_start';
   static const String _keyTimeframeEndDate = 'timeframe_end';
+  static const String _keyUpdateFrequency = 'update_frequency';
 
   final SharedPreferences _prefs;
 
@@ -131,6 +132,14 @@ class AppConfig {
     }
   }
 
+  /// Get location update frequency in milliseconds (defaults to 10000)
+  int get updateFrequency => _prefs.getInt(_keyUpdateFrequency) ?? 10000;
+
+  /// Set location update frequency in milliseconds
+  Future<void> setUpdateFrequency(int frequencyMs) async {
+    await _prefs.setInt(_keyUpdateFrequency, frequencyMs);
+  }
+
   /// Save configuration and mark setup as complete
   Future<void> saveConfig({
     required String teamName,
@@ -142,6 +151,7 @@ class AppConfig {
     required String timezone,
     DateTime? timeframeStartDate,
     DateTime? timeframeEndDate,
+    int? updateFrequency,
   }) async {
     await _prefs.setString(_keyTeamName, teamName);
     await _prefs.setString(_keyEvent, event);
@@ -185,7 +195,56 @@ class AppConfig {
       await _prefs.remove(_keyTimeframeEndDate);
     }
 
+    // Save update frequency in milliseconds
+    if (updateFrequency != null &&
+        updateFrequency >= 1000 &&
+        updateFrequency <= 60000) {
+      await _prefs.setInt(_keyUpdateFrequency, updateFrequency);
+    } else {
+      // Use default 10 seconds if not provided or invalid
+      await _prefs.setInt(_keyUpdateFrequency, 10000);
+    }
+
     await _prefs.setBool(_keySetupComplete, true);
+  }
+
+  /// Update timeframe and frequency from setup config data (called on app startup to refresh from API)
+  Future<void> updateTimeframeAndFrequencyFromSetupConfig(
+    Map<String, dynamic> setupConfig,
+  ) async {
+    try {
+      // Update timeframe_start
+      if (setupConfig['timeframe_start'] is String &&
+          (setupConfig['timeframe_start'] as String).isNotEmpty) {
+        await _prefs.setString(
+          _keyTimeframeStartDate,
+          setupConfig['timeframe_start'] as String,
+        );
+      } else {
+        await _prefs.remove(_keyTimeframeStartDate);
+      }
+
+      // Update timeframe_end
+      if (setupConfig['timeframe_end'] is String &&
+          (setupConfig['timeframe_end'] as String).isNotEmpty) {
+        await _prefs.setString(
+          _keyTimeframeEndDate,
+          setupConfig['timeframe_end'] as String,
+        );
+      } else {
+        await _prefs.remove(_keyTimeframeEndDate);
+      }
+
+      // Update update_frequency
+      if (setupConfig['update_frequency'] is int) {
+        final frequency = setupConfig['update_frequency'] as int;
+        if (frequency >= 1000 && frequency <= 60000) {
+          await _prefs.setInt(_keyUpdateFrequency, frequency);
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error updating timeframe and frequency from setupConfig: $e');
+    }
   }
 
   /// Clear all configuration (for testing or reset)
@@ -200,6 +259,7 @@ class AppConfig {
     await _prefs.remove(_keyTimezone);
     await _prefs.remove(_keyTimeframeStartDate);
     await _prefs.remove(_keyTimeframeEndDate);
+    await _prefs.remove(_keyUpdateFrequency);
     await _prefs.remove(_keySetupComplete);
   }
 }

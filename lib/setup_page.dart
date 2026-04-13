@@ -24,6 +24,7 @@ class _SetupPageState extends State<SetupPage> {
   DateTime? _teamAccessStartDate;
   DateTime? _teamAccessEndDate;
   String? _selectedTimezone;
+  int? _updateFrequency;
   bool _isSaving = false;
   bool _showConfigurationReview = false;
 
@@ -136,6 +137,24 @@ class _SetupPageState extends State<SetupPage> {
           ? setupConfig['timezone'] as String
           : 'UTC';
 
+      // Extract update frequency from setupConfig (in milliseconds)
+      int? updateFrequency;
+      final updateFrequencyRaw = setupConfig['update_frequency'];
+      if (updateFrequencyRaw is int) {
+        // Validate frequency is within acceptable range (1-60 seconds)
+        if (updateFrequencyRaw >= 1000 && updateFrequencyRaw <= 60000) {
+          updateFrequency = updateFrequencyRaw;
+        } else {
+          print(
+            '⚠️ Invalid update frequency from API: $updateFrequencyRaw ms, using default 10000 ms',
+          );
+        }
+      } else {
+        print(
+          '⚠️ Update frequency not found in setupConfig or invalid type, using default',
+        );
+      }
+
       setState(() {
         _teamNameController.text = data['teamName'] ?? '';
         _eventController.text = data['event'] ?? '';
@@ -143,6 +162,7 @@ class _SetupPageState extends State<SetupPage> {
         _selectedTimezone = apiTimezone;
         _teamAccessStartDate = teamAccessStartDate;
         _teamAccessEndDate = teamAccessEndDate;
+        _updateFrequency = updateFrequency;
         _showConfigurationReview = true;
       });
 
@@ -201,6 +221,7 @@ class _SetupPageState extends State<SetupPage> {
         _selectedTimezone = null;
         _teamAccessStartDate = null;
         _teamAccessEndDate = null;
+        _updateFrequency = null;
         _showConfigurationReview = false;
       });
 
@@ -245,6 +266,7 @@ class _SetupPageState extends State<SetupPage> {
         timezone: _selectedTimezone!,
         timeframeStartDate: _teamAccessStartDate,
         timeframeEndDate: _teamAccessEndDate,
+        updateFrequency: _updateFrequency,
       );
 
       print('✅ Configuration saved');

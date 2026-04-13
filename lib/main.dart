@@ -12,6 +12,7 @@ import 'settings_page.dart';
 import 'about.dart';
 import 'l10n/app_localizations.dart';
 import 'location_service.dart';
+import 'event_service.dart';
 import 'splash_screen.dart';
 
 void main() async {
@@ -39,6 +40,38 @@ class _AppLoaderState extends State<AppLoader> {
 
   Future<void> _initializeApp() async {
     final appConfig = await AppConfig.init();
+
+    // If setup is complete, refresh timeframe and frequency from API
+    if (appConfig.isSetupComplete) {
+      try {
+        print('🔄 Refreshing configuration from API on app startup...');
+        final teamName = appConfig.teamName;
+        final event = appConfig.event;
+        final apiUrl = appConfig.apiUrl;
+
+        if (teamName != null && event != null) {
+          final setupConfig = await EventService.queryTeamSetupConfig(
+            apiUrl: apiUrl,
+            eventName: event,
+            teamName: teamName,
+          );
+
+          if (setupConfig != null) {
+            // Update timeframe and frequency with latest values from API
+            await appConfig.updateTimeframeAndFrequencyFromSetupConfig(
+              setupConfig,
+            );
+            print('✅ Configuration refreshed from API');
+          } else {
+            print(
+              '⚠️ Failed to refresh configuration from API, using cached values',
+            );
+          }
+        }
+      } catch (e) {
+        print('⚠️ Error refreshing configuration on app startup: $e');
+      }
+    }
 
     // Keep splash screen visible for at least 3 seconds for shimmer effect
     await Future.delayed(const Duration(milliseconds: 4500));
@@ -238,7 +271,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _initForegroundTask();
+    _initForegroundTask(widget.appConfig);
     _requestPermissions();
     _refreshEventImageCache();
 
@@ -340,7 +373,13 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void _initForegroundTask() {
+  void _initForegroundTask(AppConfig appConfig) {
+    // Get update frequency from config (in milliseconds), fallback to 10 seconds
+    final updateFrequency = appConfig.updateFrequency;
+    print(
+      '📍 Initializing foreground task with update frequency: ${updateFrequency}ms (${updateFrequency / 1000}s)',
+    );
+
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'location_channel',
@@ -355,8 +394,8 @@ class _HomePageState extends State<HomePage>
       iosNotificationOptions: const IOSNotificationOptions(),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.repeat(
-          15000,
-        ), // Update every 15 seconds
+          updateFrequency,
+        ), // Update with frequency from config
         autoRunOnBoot: false,
         allowWakeLock: true,
       ),
