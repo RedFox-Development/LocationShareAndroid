@@ -6,10 +6,13 @@ Android app for team-based location sharing during events.
 
 - ✅ QR code-based setup for quick configuration
 - ✅ Background location tracking with foreground service
+- ✅ **Configurable location update frequency** (1-60 seconds, default 10s)
+- ✅ **Dynamic frequency refresh on app startup** from API
 - ✅ GraphQL API integration for location data and event images
 - ✅ Base64 image loading from database (no external URLs required)
 - ✅ Multilingual support (English UK, Finnish)
 - ✅ Timezone-aware location timestamps
+- ✅ **Precise team access timeframe control** (date + hour/minute)
 - ✅ Automatic configuration expiration
 - ✅ Dark/Light mode support
 - ✅ Material Design 3 UI
@@ -39,14 +42,9 @@ The app uses a GraphQL API for both location updates and event data:
 {
   "teamName": "Team Alpha",
   "event": "Event name",
-  "apiUrl": "https://your-project.vercel.app/api",
-  "imageUrl": "data:image/png;base64,..." (optional, for backward compatibility),
-  "expirationDate": "2027-03-01",
-  "timezone": "Europe/Helsinki"
+  "apiUrl": "https://your-project.vercel.app/api"
 }
 ```
-
-**Note**: `imageUrl` in QR code is optional. Images are fetched from the GraphQL API automatically.
 
 ## Roadmap
 
