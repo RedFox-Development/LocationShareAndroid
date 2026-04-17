@@ -116,8 +116,9 @@ class LocationTaskHandler extends TaskHandler {
       final lon = position.longitude.toStringAsFixed(5);
 
       // Format the timestamp to a readable time string (HH:MM:SS)
+      final timeStampLocal = timestamp.toLocal();
       final time =
-          "${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}";
+          "${timeStampLocal.hour.toString().padLeft(2, '0')}:${timeStampLocal.minute.toString().padLeft(2, '0')}:${timeStampLocal.second.toString().padLeft(2, '0')}";
 
       // Update notification with current location and time
       await FlutterForegroundTask.updateService(
