@@ -71,6 +71,53 @@ class _AppLoaderState extends State<AppLoader> {
       } catch (e) {
         print('⚠️ Error refreshing configuration on app startup: $e');
       }
+
+      // Check if configuration has expired after refresh
+      if (appConfig.isExpired) {
+        print(
+          '❌ Configuration expired after API refresh - triggering automatic reset',
+        );
+
+        // Check if location sharing is currently active and stop it
+        try {
+          final isServiceRunning =
+              await FlutterForegroundTask.isRunningService;
+          if (isServiceRunning) {
+            print(
+              '🛑 Stopping active location sharing due to expired configuration',
+            );
+            await FlutterForegroundTask.stopService();
+          }
+        } catch (e) {
+          print('⚠️ Error checking/stopping location service: $e');
+        }
+
+        // Clear the expired configuration
+        await appConfig.clearConfig();
+        print('🧹 Expired configuration cleared');
+
+        // Notify user of the expiration
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: const Text('Configuration Expired'),
+                content: const Text(
+                  'Your event configuration has expired. Please set up a new configuration to continue.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
     }
 
     // Keep splash screen visible for at least 3 seconds for shimmer effect
