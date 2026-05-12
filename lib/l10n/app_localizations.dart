@@ -109,6 +109,19 @@ class AppLocalizations {
   String get scanQRTitle => _localizedValues['scanQRTitle']!;
   String get positionQRCode => _localizedValues['positionQRCode']!;
 
+  // Disclosure / Consent
+  String get disclosureTitle => _localizedValues['disclosureTitle']!;
+  String get disclosureBody => _localizedValues['disclosureBody']!;
+  String get disclosureNotificationsTitle =>
+      _localizedValues['disclosureNotificationsTitle']!;
+  String get disclosureNotificationsDescription =>
+      _localizedValues['disclosureNotificationsDescription']!;
+  String get disclosureLocationTitle =>
+      _localizedValues['disclosureLocationTitle']!;
+  String get disclosureLocationDescription =>
+      _localizedValues['disclosureLocationDescription']!;
+  String get disclosureContinue => _localizedValues['disclosureContinue']!;
+
   // English strings
   static const Map<String, String> _englishStrings = {
     'sourceCode': 'Source code',
@@ -183,6 +196,17 @@ class AppLocalizations {
     'selectLanguage': 'Select Language',
     'scanQRTitle': 'Scan QR Code',
     'positionQRCode': 'Position the QR code within the frame',
+    'disclosureTitle': 'Privacy and data use',
+    'disclosureBody':
+        'Before you continue, the app needs your explicit consent to use precise location in the foreground and background, and to show a persistent status notification while background sharing is active.',
+    'disclosureNotificationsTitle': 'Accept notifications status message',
+    'disclosureNotificationsDescription':
+        'I understand the app will show a persistent notification/status message while background sharing is running.',
+    'disclosureLocationTitle':
+        'Accept precise location for foreground and background use',
+    'disclosureLocationDescription':
+        'I understand the app will collect precise location while sharing is active.',
+    'disclosureContinue': 'Accept and continue',
   };
 
   // Finnish strings
@@ -259,6 +283,17 @@ class AppLocalizations {
     'selectLanguage': 'Valitse kieli',
     'scanQRTitle': 'Skannaa QR-koodi',
     'positionQRCode': 'Aseta QR-koodi kehyksen sisälle',
+    'disclosureTitle': 'Tietosuoja ja tiedon käyttö',
+    'disclosureBody':
+        'Ennen kuin jatkat, sovellus tarvitsee suostumuksesi tarkan sijainnin käyttöön etu- ja taka-alalla sekä pysyvän tilailmoituksen näyttämiseen, kun taustajakaminen on aktiivinen.',
+    'disclosureNotificationsTitle': 'Hyväksy sijainninjaon tilaviesti',
+    'disclosureNotificationsDescription':
+        'Ymmärrän, että sovellus näyttää pysyvän ilmoituksen/tilaviestin, kun taustalla tapahtuva jakaminen on käynnissä.',
+    'disclosureLocationTitle':
+        'Hyväksy tarkan sijainnin käyttö etu- ja taka-alalla',
+    'disclosureLocationDescription':
+        'Ymmärrän, että sovellus kerää tarkkaa sijaintia jakamisen ollessa aktiivinen.',
+    'disclosureContinue': 'Hyväksy ja jatka',
   };
 }
 

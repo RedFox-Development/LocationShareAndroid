@@ -22,7 +22,7 @@ Future<void> _pumpPastSplash(WidgetTester tester) async {
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({'disclosure_accepted': true});
   });
 
   group('App Integration Tests', () {
@@ -76,6 +76,7 @@ void main() {
         'api_url': 'https://api.example.com/api',
         'timezone': 'UTC',
         'setup_complete': true,
+        'disclosure_accepted': true,
       });
 
       await _pumpPastSplash(tester);
@@ -97,6 +98,7 @@ void main() {
         'api_url': 'https://api.example.com/api',
         'timezone': 'UTC',
         'setup_complete': true,
+        'disclosure_accepted': true,
       });
 
       await _pumpPastSplash(tester);
@@ -164,7 +166,10 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      SharedPreferences.setMockInitialValues({'language_code': 'en'});
+      SharedPreferences.setMockInitialValues({
+        'language_code': 'en',
+        'disclosure_accepted': true,
+      });
 
       await _pumpPastSplash(tester);
 
@@ -178,7 +183,10 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      SharedPreferences.setMockInitialValues({'language_code': 'fi'});
+      SharedPreferences.setMockInitialValues({
+        'language_code': 'fi',
+        'disclosure_accepted': true,
+      });
 
       await _pumpPastSplash(tester);
 
@@ -204,6 +212,50 @@ void main() {
   });
 
   group('App Initialization Tests', () {
+    testWidgets('first run shows consent gate before setup', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      SharedPreferences.setMockInitialValues({});
+
+      await tester.pumpWidget(const AppLoader());
+      await tester.pump(const Duration(milliseconds: 4600));
+      for (int i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(find.text('Accept notifications status message'), findsOneWidget);
+      expect(find.text('Accept and continue'), findsOneWidget);
+    });
+
+    testWidgets('first run consent screen offers language switching', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      SharedPreferences.setMockInitialValues({});
+
+      await tester.pumpWidget(const AppLoader());
+      await tester.pump(const Duration(milliseconds: 4600));
+      for (int i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(find.byIcon(Icons.language), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.language));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('English (UK)'), findsOneWidget);
+      expect(find.text('Suomi'), findsOneWidget);
+    });
+
     testWidgets('splash screen shows for minimum duration', (
       WidgetTester tester,
     ) async {

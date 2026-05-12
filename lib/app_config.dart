@@ -16,6 +16,7 @@ class AppConfig {
   static const String _keyTimeframeStartDate = 'timeframe_start';
   static const String _keyTimeframeEndDate = 'timeframe_end';
   static const String _keyUpdateFrequency = 'update_frequency';
+  static const String _keyDisclosureAccepted = 'disclosure_accepted';
 
   final SharedPreferences _prefs;
 
@@ -36,6 +37,10 @@ class AppConfig {
 
   /// Check if initial setup has been completed
   bool get isSetupComplete => _prefs.getBool(_keySetupComplete) ?? false;
+
+  /// Check whether the user has accepted the prominent disclosure
+  bool get hasAcceptedDisclosure =>
+      _prefs.getBool(_keyDisclosureAccepted) ?? false;
 
   /// Check if the configuration has expired (timeframe end reached)
   bool get isExpired {
@@ -206,6 +211,11 @@ class AppConfig {
     }
 
     await _prefs.setBool(_keySetupComplete, true);
+  }
+
+  /// Persist acceptance of the prominent disclosure required before use
+  Future<void> acceptDisclosure() async {
+    await _prefs.setBool(_keyDisclosureAccepted, true);
   }
 
   /// Update timeframe and frequency from setup config data (called on app startup to refresh from API)

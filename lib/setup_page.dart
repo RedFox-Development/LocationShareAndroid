@@ -290,7 +290,10 @@ class _SetupPageState extends State<SetupPage> {
 
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/home');
+          final nextRoute = widget.appConfig.hasAcceptedDisclosure
+              ? '/home'
+              : '/consent';
+          Navigator.of(context).pushReplacementNamed(nextRoute);
         }
       }
     } catch (e) {

@@ -14,6 +14,7 @@ import 'l10n/app_localizations.dart';
 import 'location_service.dart';
 import 'event_service.dart';
 import 'splash_screen.dart';
+import 'consent_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,8 +81,7 @@ class _AppLoaderState extends State<AppLoader> {
 
         // Check if location sharing is currently active and stop it
         try {
-          final isServiceRunning =
-              await FlutterForegroundTask.isRunningService;
+          final isServiceRunning = await FlutterForegroundTask.isRunningService;
           if (isServiceRunning) {
             print(
               '🛑 Stopping active location sharing due to expired configuration',
@@ -240,6 +240,10 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final initialRoute = widget.appConfig.hasAcceptedDisclosure
+        ? (widget.appConfig.isSetupComplete ? '/home' : '/setup')
+        : '/consent';
+
     return MaterialApp(
       title: 'Location Share',
       debugShowCheckedModeBanner: false,
@@ -254,8 +258,9 @@ class _MyAppState extends State<MyApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      initialRoute: widget.appConfig.isSetupComplete ? '/home' : '/setup',
+      initialRoute: initialRoute,
       routes: {
+        '/consent': (context) => ConsentPage(appConfig: widget.appConfig),
         '/setup': (context) => SetupPage(appConfig: widget.appConfig),
         '/home': (context) => HomePage(appConfig: widget.appConfig),
       },
@@ -451,6 +456,10 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _requestPermissions() async {
+    if (!widget.appConfig.hasAcceptedDisclosure) {
+      return;
+    }
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       await Geolocator.openLocationSettings();
@@ -470,6 +479,18 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _startService() async {
+    if (!widget.appConfig.hasAcceptedDisclosure) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please accept the location disclosure first.'),
+            backgroundColor: Color.fromRGBO(188, 33, 52, 1.0),
+          ),
+        );
+      }
+      return;
+    }
+
     final startDate = widget.appConfig.timeframeStartDate?.toUtc();
     final nowUtc = DateTime.now().toUtc();
 
