@@ -122,6 +122,52 @@ class AppLocalizations {
       _localizedValues['disclosureLocationDescription']!;
   String get disclosureContinue => _localizedValues['disclosureContinue']!;
 
+  // Permissions Setup Page
+  String get permissionsSetupTitle =>
+      _localizedValues['permissionsSetupTitle']!;
+  String get permissionsSetupBody => _localizedValues['permissionsSetupBody']!;
+  String get notificationsPermissionTitle =>
+      _localizedValues['notificationsPermissionTitle']!;
+  String get notificationsPermissionDescription =>
+      _localizedValues['notificationsPermissionDescription']!;
+  String get locationPermissionTitle =>
+      _localizedValues['locationPermissionTitle']!;
+  String get locationPermissionDescription =>
+      _localizedValues['locationPermissionDescription']!;
+  String get backgroundLocationPermissionTitle =>
+      _localizedValues['backgroundLocationPermissionTitle']!;
+  String get backgroundLocationPermissionDescription =>
+      _localizedValues['backgroundLocationPermissionDescription']!;
+  String get batteryOptimizationTitle =>
+      _localizedValues['batteryOptimizationTitle']!;
+  String get batteryOptimizationDescription =>
+      _localizedValues['batteryOptimizationDescription']!;
+  String get allowBackgroundActivityTitle =>
+      _localizedValues['allowBackgroundActivityTitle']!;
+  String get allowBackgroundActivityDescription =>
+      _localizedValues['allowBackgroundActivityDescription']!;
+  String get pauseAppActivityTitle =>
+      _localizedValues['pauseAppActivityTitle']!;
+  String get pauseAppActivityDescription =>
+      _localizedValues['pauseAppActivityDescription']!;
+  String get ignoreBatteryOptimizationsTitle =>
+      _localizedValues['ignoreBatteryOptimizationsTitle']!;
+  String get ignoreBatteryOptimizationsDescription =>
+      _localizedValues['ignoreBatteryOptimizationsDescription']!;
+  String get permissionSet => _localizedValues['permissionSet']!;
+  String get permissionUnset => _localizedValues['permissionUnset']!;
+  String get permissionDeclined => _localizedValues['permissionDeclined']!;
+  String get permissionGranted => _localizedValues['permissionGranted']!;
+  String get permissionWorking => _localizedValues['permissionWorking']!;
+  String get requestPermission => _localizedValues['requestPermission']!;
+  String get openBatterySettings => _localizedValues['openBatterySettings']!;
+  String get openAppSettings => _localizedValues['openAppSettings']!;
+  String get openLocationSettings => _localizedValues['openLocationSettings']!;
+  String get locationServicesDisabled =>
+      _localizedValues['locationServicesDisabled']!;
+  String get confirmSet => _localizedValues['confirmSet']!;
+  String get permissionsContinue => _localizedValues['permissionsContinue']!;
+
   // English strings
   static const Map<String, String> _englishStrings = {
     'sourceCode': 'Source code',
@@ -207,6 +253,42 @@ class AppLocalizations {
     'disclosureLocationDescription':
         'I understand the app will collect precise location while sharing is active.',
     'disclosureContinue': 'Accept and continue',
+    'permissionsSetupTitle': 'Permissions setup',
+    'permissionsSetupBody':
+        'Set up the permissions and device settings the app needs before you continue to the welcome and event setup screens.',
+    'notificationsPermissionTitle': 'Notifications',
+    'notificationsPermissionDescription':
+        'Needed for the persistent foreground status message while background sharing runs.',
+    'locationPermissionTitle': 'Location access',
+    'locationPermissionDescription':
+        'Needed to read your precise location while sharing is active.',
+    'backgroundLocationPermissionTitle': 'Background location access',
+    'backgroundLocationPermissionDescription':
+        'Needed so location updates can continue while the app is not in the foreground.',
+    'batteryOptimizationTitle': 'Battery',
+    'batteryOptimizationDescription':
+        'Open the Android battery settings and disable the restrictions that can pause background tracking.',
+    'allowBackgroundActivityTitle': 'Allow background activity',
+    'allowBackgroundActivityDescription':
+        'Turn this on in the battery settings so the app can keep running in the background.',
+    'pauseAppActivityTitle': 'Pause app activity if unused',
+    'pauseAppActivityDescription':
+        'Turn this off so Android does not suspend the app when it has been unused for a while.',
+    'ignoreBatteryOptimizationsTitle': 'Ignore battery optimizations',
+    'ignoreBatteryOptimizationsDescription':
+        'Grant this Android permission so location updates are less likely to be interrupted.',
+    'permissionSet': 'Set',
+    'permissionUnset': 'Not set',
+    'permissionDeclined': 'Declined',
+    'permissionGranted': 'Granted',
+    'permissionWorking': 'Working...',
+    'requestPermission': 'Request',
+    'openBatterySettings': 'Open battery settings',
+    'openAppSettings': 'Open app settings',
+    'openLocationSettings': 'Open location settings',
+    'locationServicesDisabled': 'Location services are turned off',
+    'confirmSet': 'Confirm set',
+    'permissionsContinue': 'Continue to welcome',
   };
 
   // Finnish strings
@@ -294,6 +376,43 @@ class AppLocalizations {
     'disclosureLocationDescription':
         'Ymmärrän, että sovellus kerää tarkkaa sijaintia jakamisen ollessa aktiivinen.',
     'disclosureContinue': 'Hyväksy ja jatka',
+    'permissionsSetupTitle': 'Salli tarvittavat oikeudet',
+    'permissionsSetupBody':
+        'Määritä sovellukselle tarvittavat oikeudet ja laiteasetukset ennen kuin jatkat tervetulonäkymään ja tapahtuman määritykseen.',
+    'notificationsPermissionTitle': 'Ilmoitukset',
+    'notificationsPermissionDescription':
+        'Tarvitaan, jotta taustajaon aikana näkyy pysyvä tilaviesti.',
+    'locationPermissionTitle': 'Sijaintioikeus',
+    'locationPermissionDescription':
+        'Tarvitaan tarkan sijainnin lukemiseen silloin, kun jako on käynnissä.',
+    'backgroundLocationPermissionTitle': 'Taustasijainti',
+    'backgroundLocationPermissionDescription':
+        'Tarvitaan, jotta sijaintipäivitykset voivat jatkua, vaikka sovellus ei olisi etualalla.',
+    'batteryOptimizationTitle': 'Akku',
+    'batteryOptimizationDescription':
+        'Avaa Androidin akun asetukset ja poista ne rajoitukset, jotka voivat keskeyttää taustaseurannan.',
+    'allowBackgroundActivityTitle': 'Salli taustatoiminta',
+    'allowBackgroundActivityDescription':
+        'Kytke tämä päälle akun asetuksista, jotta sovellus voi jatkaa taustalla.',
+    'pauseAppActivityTitle':
+        'Keskeytä sovelluksen toiminta, jos sitä ei käytetä',
+    'pauseAppActivityDescription':
+        'Kytke tämä pois päältä, jotta Android ei pysäytä sovellusta, kun sitä ei ole käytetty hetkeen.',
+    'ignoreBatteryOptimizationsTitle': 'Ohita akun optimoinnit',
+    'ignoreBatteryOptimizationsDescription':
+        'Myönnä tämä Android-oikeus, jotta sijaintipäivitykset eivät katkeaisi yhtä helposti.',
+    'permissionSet': 'Asetettu',
+    'permissionUnset': 'Ei asetettu',
+    'permissionDeclined': 'Hylätty',
+    'permissionGranted': 'Myönnetty',
+    'permissionWorking': 'Toimitaan...',
+    'requestPermission': 'Pyydä',
+    'openBatterySettings': 'Avaa akun asetukset',
+    'openAppSettings': 'Avaa sovelluksen asetukset',
+    'openLocationSettings': 'Avaa sijaintiasetukset',
+    'locationServicesDisabled': 'Sijaintipalvelut on pois päältä',
+    'confirmSet': 'Vahvista asetetuksi',
+    'permissionsContinue': 'Jatka tervetuloon',
   };
 }
 

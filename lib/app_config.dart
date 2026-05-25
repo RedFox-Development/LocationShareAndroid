@@ -17,6 +17,12 @@ class AppConfig {
   static const String _keyTimeframeEndDate = 'timeframe_end';
   static const String _keyUpdateFrequency = 'update_frequency';
   static const String _keyDisclosureAccepted = 'disclosure_accepted';
+  static const String _keyPermissionsSetupComplete =
+      'permissions_setup_complete';
+  static const String _keyBatteryBackgroundActivityConfirmed =
+      'battery_background_activity_confirmed';
+  static const String _keyPauseAppActivityConfirmed =
+      'pause_app_activity_confirmed';
 
   final SharedPreferences _prefs;
 
@@ -41,6 +47,18 @@ class AppConfig {
   /// Check whether the user has accepted the prominent disclosure
   bool get hasAcceptedDisclosure =>
       _prefs.getBool(_keyDisclosureAccepted) ?? false;
+
+  /// Check whether the permissions setup step has been completed
+  bool get hasCompletedPermissionsSetup =>
+      _prefs.getBool(_keyPermissionsSetupComplete) ?? false;
+
+  /// Check whether the battery background activity step has been confirmed
+  bool get hasConfirmedBatteryBackgroundActivity =>
+      _prefs.getBool(_keyBatteryBackgroundActivityConfirmed) ?? false;
+
+  /// Check whether the pause app activity step has been confirmed
+  bool get hasConfirmedPauseAppActivity =>
+      _prefs.getBool(_keyPauseAppActivityConfirmed) ?? false;
 
   /// Check if the configuration has expired (timeframe end reached)
   bool get isExpired {
@@ -218,6 +236,21 @@ class AppConfig {
     await _prefs.setBool(_keyDisclosureAccepted, true);
   }
 
+  /// Persist completion of the permissions setup step
+  Future<void> completePermissionsSetup() async {
+    await _prefs.setBool(_keyPermissionsSetupComplete, true);
+  }
+
+  /// Persist confirmation that background activity is allowed in battery settings
+  Future<void> confirmBatteryBackgroundActivity() async {
+    await _prefs.setBool(_keyBatteryBackgroundActivityConfirmed, true);
+  }
+
+  /// Persist confirmation that app activity is not paused when unused
+  Future<void> confirmPauseAppActivity() async {
+    await _prefs.setBool(_keyPauseAppActivityConfirmed, true);
+  }
+
   /// Update timeframe and frequency from setup config data (called on app startup to refresh from API)
   Future<void> updateTimeframeAndFrequencyFromSetupConfig(
     Map<String, dynamic> setupConfig,
@@ -271,5 +304,8 @@ class AppConfig {
     await _prefs.remove(_keyTimeframeEndDate);
     await _prefs.remove(_keyUpdateFrequency);
     await _prefs.remove(_keySetupComplete);
+    await _prefs.remove(_keyPermissionsSetupComplete);
+    await _prefs.remove(_keyBatteryBackgroundActivityConfirmed);
+    await _prefs.remove(_keyPauseAppActivityConfirmed);
   }
 }

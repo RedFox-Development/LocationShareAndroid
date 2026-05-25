@@ -13,6 +13,7 @@ import 'about.dart';
 import 'l10n/app_localizations.dart';
 import 'location_service.dart';
 import 'event_service.dart';
+import 'permissions_setup_page.dart';
 import 'splash_screen.dart';
 import 'consent_page.dart';
 
@@ -240,9 +241,13 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final initialRoute = widget.appConfig.hasAcceptedDisclosure
-        ? (widget.appConfig.isSetupComplete ? '/home' : '/setup')
-        : '/consent';
+    final initialRoute = !widget.appConfig.hasAcceptedDisclosure
+        ? '/consent'
+        : widget.appConfig.isSetupComplete
+        ? '/home'
+        : widget.appConfig.hasCompletedPermissionsSetup
+        ? '/setup'
+        : '/permissions';
 
     return MaterialApp(
       title: 'Location Share',
@@ -261,6 +266,8 @@ class _MyAppState extends State<MyApp> {
       initialRoute: initialRoute,
       routes: {
         '/consent': (context) => ConsentPage(appConfig: widget.appConfig),
+        '/permissions': (context) =>
+            PermissionsSetupPage(appConfig: widget.appConfig),
         '/setup': (context) => SetupPage(appConfig: widget.appConfig),
         '/home': (context) => HomePage(appConfig: widget.appConfig),
       },
@@ -456,7 +463,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _requestPermissions() async {
-    if (!widget.appConfig.hasAcceptedDisclosure) {
+    if (widget.appConfig.hasCompletedPermissionsSetup) {
       return;
     }
 

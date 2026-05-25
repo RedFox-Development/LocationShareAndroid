@@ -36,7 +36,9 @@ class _ConsentPageState extends State<ConsentPage> {
         return;
       }
 
-      final nextRoute = widget.appConfig.isSetupComplete ? '/home' : '/setup';
+      final nextRoute = widget.appConfig.isSetupComplete
+          ? '/home'
+          : '/permissions';
       Navigator.of(context).pushReplacementNamed(nextRoute);
     } finally {
       if (mounted) {

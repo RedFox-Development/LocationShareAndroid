@@ -46,7 +46,7 @@ void main() {
       }
     });
 
-    testWidgets('app navigates to setup when not configured', (
+    testWidgets('app navigates to permissions when setup has not started', (
       WidgetTester tester,
     ) async {
       tester.view.physicalSize = const Size(1080, 1920);
@@ -55,12 +55,8 @@ void main() {
 
       await _pumpPastSplash(tester);
 
-      // Should show setup page
-      expect(find.text('Welcome!'), findsOneWidget);
-      expect(
-        find.text('Scan a QR code to quickly configure the app'),
-        findsOneWidget,
-      );
+      // Should show permissions page before welcome/setup.
+      expect(find.text('Continue to welcome'), findsOneWidget);
     });
 
     testWidgets('app navigates to home when configured', (
@@ -173,7 +169,7 @@ void main() {
 
       await _pumpPastSplash(tester);
 
-      expect(find.text('Welcome!'), findsOneWidget);
+      expect(find.text('Continue to welcome'), findsOneWidget);
     });
 
     testWidgets('app supports Finnish localization', (
@@ -190,7 +186,7 @@ void main() {
 
       await _pumpPastSplash(tester);
 
-      expect(find.text('Tervetuloa!'), findsOneWidget);
+      expect(find.text('Jatka tervetuloon'), findsOneWidget);
     });
 
     testWidgets('supported locales include en and fi', (
@@ -256,6 +252,31 @@ void main() {
       expect(find.text('Suomi'), findsOneWidget);
     });
 
+    testWidgets('permissions page offers language switching', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      SharedPreferences.setMockInitialValues({'disclosure_accepted': true});
+
+      await tester.pumpWidget(const AppLoader());
+      await tester.pump(const Duration(milliseconds: 4600));
+      for (int i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(find.byIcon(Icons.language), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.language));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('English (UK)'), findsOneWidget);
+      expect(find.text('Suomi'), findsOneWidget);
+    });
+
     testWidgets('splash screen shows for minimum duration', (
       WidgetTester tester,
     ) async {
@@ -274,10 +295,12 @@ void main() {
 
       // After 4.6 seconds total, should transition.
       await tester.pump(const Duration(milliseconds: 3600));
-      await tester.pumpAndSettle();
+      for (int i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
-      // Should now be on setup or home page
-      expect(find.text('Welcome!'), findsAny);
+      // Should now be on the permissions or main flow.
+      expect(find.text('Continue to welcome'), findsAny);
     });
   });
 }
